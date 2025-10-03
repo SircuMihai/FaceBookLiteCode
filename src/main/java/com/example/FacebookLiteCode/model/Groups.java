@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import jakarta.persistence.*;
+import java.util.List;
 
 
 @Entity
@@ -23,10 +24,10 @@ public class Groups {
     @Column(name = "privacy")
     private String privacy;
 
-    // Relații - comentate temporar pentru a evita dependențele circulare
-    // @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    // private List<Users_Groups> userGroups;
+    // Relații OneToMany
+    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Users_Groups> userGroups;
     
-    // @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    // private List<Mesages> messages;
+    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Mesages> messages;
 }

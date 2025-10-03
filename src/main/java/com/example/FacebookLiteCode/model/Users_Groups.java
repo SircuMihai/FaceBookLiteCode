@@ -25,12 +25,12 @@ public class Users_Groups {
     @Column(name = "group_admin")
     private boolean group_admin;
 
-    // Relații - comentate temporar pentru a evita dependențele circulare
-    // @ManyToOne(fetch = FetchType.LAZY)
-    // @JoinColumn(name = "user_id", insertable = false, updatable = false)
-    // private Users user;
+    // Relații ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
+    private Users user;
     
-    // @ManyToOne(fetch = FetchType.LAZY)
-    // @JoinColumn(name = "group_id", insertable = false, updatable = false)
-    // private Groups group;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "group_id", insertable = false, updatable = false)
+    private Groups group;
 }

@@ -22,12 +22,12 @@ public class UserFriends {
     @Column(name = "friend_id")
     private int friend_id;
 
-    // Relații - comentate temporar pentru a evita dependențele circulare
-    // @ManyToOne(fetch = FetchType.LAZY)
-    // @JoinColumn(name = "user_id", insertable = false, updatable = false)
-    // private Users user;
+    // Relații ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
+    private Users user;
     
-    // @ManyToOne(fetch = FetchType.LAZY)
-    // @JoinColumn(name = "friend_id", insertable = false, updatable = false)
-    // private Users friend;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "friend_id", insertable = false, updatable = false)
+    private Users friend;
 }

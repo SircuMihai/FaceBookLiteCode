@@ -25,9 +25,12 @@ public class Mesages {
     @Column(name = "is_pin")
     private boolean is_pin;
     
-    @Column(name = "user_id")
-    private int user_id;
+    // Relații
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private Users user;
     
-    @Column(name = "group_id")
-    private int group_id;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "group_id", nullable = false)
+    private Groups group;
 }

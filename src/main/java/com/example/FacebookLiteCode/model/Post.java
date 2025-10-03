@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import jakarta.persistence.*;
+import java.util.List;
 
 @Entity
 @Table(name = "post")
@@ -22,6 +23,11 @@ public class Post {
     @Column(name = "created_at")
     private String created_at;
     
-    @Column(name = "user_id")
-    private int user_id;
+    // Relații
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private Users user;
+    
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Coments> comments;
 }

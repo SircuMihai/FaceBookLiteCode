@@ -19,9 +19,12 @@ public class Coments {
     @Column(name = "content", nullable = false)
     private String content;
     
-    @Column(name = "post_id")
-    private int post_id;
+    // Relații
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "post_id", nullable = false)
+    private Post post;
     
-    @Column(name = "user_id")
-    private int user_id;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private Users user;
 }
