@@ -24,7 +24,7 @@ public class Groups {
     @Column(name = "privacy")
     private String privacy;
 
-    // Relații OneToMany
+    // Relații OneToManya
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Users_Groups> userGroups;
     
