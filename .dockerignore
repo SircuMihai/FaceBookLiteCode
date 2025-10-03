@@ -1,0 +1,15 @@
+target/
+.mvn/
+mvnw
+mvnw.cmd
+*.jar
+*.war
+*.ear
+*.class
+*.log
+.git/
+.gitignore
+README.md
+HELP.md
+.DS_Store
+Thumbs.db
