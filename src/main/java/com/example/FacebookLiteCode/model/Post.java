@@ -14,13 +14,13 @@ import java.util.List;
 public class Post {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "postId")
+    @Column(name = "post_id")
     private int postId;
     
     @Column(name = "content", nullable = false)
     private String content;
     
-    @Column(name = "createdAt")
+    @Column(name = "created_at")
     private String createdAt;
     
     // Relații
