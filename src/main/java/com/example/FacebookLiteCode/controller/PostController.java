@@ -36,7 +36,7 @@ public class PostController {
     @PutMapping("/{id}")
     public ResponseEntity<Post> updatePost(@PathVariable int id, @RequestBody Post post) {
         if (postService.getPostById(id).isPresent()) {
-            post.setPost_id(id);
+            post.setPostId(id);
             return ResponseEntity.ok(postService.savePost(post));
         }
         return ResponseEntity.notFound().build();

@@ -14,7 +14,7 @@ public class Mesages {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "message_id")
-    private int message_id;
+    private int messageId;
     
     @Column(name = "message", nullable = false)
     private String message;
@@ -23,7 +23,7 @@ public class Mesages {
     private String data;
     
     @Column(name = "is_pin")
-    private boolean is_pin;
+    private boolean isPin;
     
     // Relații
     @ManyToOne(fetch = FetchType.LAZY)

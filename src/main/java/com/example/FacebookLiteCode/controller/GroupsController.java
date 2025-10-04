@@ -36,7 +36,7 @@ public class GroupsController {
     @PutMapping("/{id}")
     public ResponseEntity<Groups> updateGroup(@PathVariable int id, @RequestBody Groups group) {
         if (groupsService.getGroupById(id).isPresent()) {
-            group.setGroup_id(id);
+            group.setGroupId(id);
             return ResponseEntity.ok(groupsService.saveGroup(group));
         }
         return ResponseEntity.notFound().build();

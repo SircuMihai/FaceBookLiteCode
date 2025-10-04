@@ -36,7 +36,7 @@ public class UserFriendsController {
     @PutMapping("/{id}")
     public ResponseEntity<UserFriends> updateUserFriends(@PathVariable int id, @RequestBody UserFriends userFriends) {
         if (userFriendsService.getUserFriendsById(id).isPresent()) {
-            userFriends.setUser_friends_id(id);
+            userFriends.setUserFriendsId(id);
             return ResponseEntity.ok(userFriendsService.saveUserFriends(userFriends));
         }
         return ResponseEntity.notFound().build();

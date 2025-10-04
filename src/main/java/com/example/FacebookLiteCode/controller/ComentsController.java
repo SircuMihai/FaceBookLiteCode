@@ -36,7 +36,7 @@ public class ComentsController {
     @PutMapping("/{id}")
     public ResponseEntity<Coments> updateComment(@PathVariable int id, @RequestBody Coments comment) {
         if (comentsService.getCommentById(id).isPresent()) {
-            comment.setComment_id(id);
+            comment.setCommentId(id);
             return ResponseEntity.ok(comentsService.saveComment(comment));
         }
         return ResponseEntity.notFound().build();

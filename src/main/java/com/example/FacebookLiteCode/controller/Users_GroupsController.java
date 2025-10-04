@@ -36,7 +36,7 @@ public class Users_GroupsController {
     @PutMapping("/{id}")
     public ResponseEntity<Users_Groups> updateUsersGroups(@PathVariable int id, @RequestBody Users_Groups usersGroups) {
         if (users_GroupsService.getUsersGroupsById(id).isPresent()) {
-            usersGroups.setUsers_groups_id(id);
+            usersGroups.setUsersGroupsId(id);
             return ResponseEntity.ok(users_GroupsService.saveUsersGroups(usersGroups));
         }
         return ResponseEntity.notFound().build();

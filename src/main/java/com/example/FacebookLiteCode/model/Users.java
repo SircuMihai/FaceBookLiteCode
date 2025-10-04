@@ -16,7 +16,7 @@ public class Users {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id")
-    private int user_id;
+    private int userId;
     
     @Column(name = "username", nullable = false, unique = true)
     private String username;
@@ -34,13 +34,13 @@ public class Users {
     private String lastName;
     
     @Column(name = "profile_picture")
-    private String profile_picture;
+    private String profilePicture;
     
     @Column(name = "last_login")
-    private String last_login;
+    private String lastLogin;
     
     @Column(name = "private_account")
-    private boolean private_account;
+    private boolean privateAccount;
 
     // Relații OneToMany
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

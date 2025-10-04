@@ -36,7 +36,7 @@ public class MesagesController {
     @PutMapping("/{id}")
     public ResponseEntity<Mesages> updateMessage(@PathVariable int id, @RequestBody Mesages message) {
         if (mesagesService.getMessageById(id).isPresent()) {
-            message.setMessage_id(id);
+            message.setMessageId(id);
             return ResponseEntity.ok(mesagesService.saveMessage(message));
         }
         return ResponseEntity.notFound().build();

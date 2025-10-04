@@ -16,10 +16,10 @@ public class Groups {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "group_id")
-    private int group_id;
+    private int groupId;
     
     @Column(name = "group_name", nullable = false)
-    private String group_name;
+    private String groupName;
     
     @Column(name = "privacy")
     private String privacy;

@@ -14,16 +14,16 @@ public class Users_Groups {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "users_groups_id")
-    private int users_groups_id;
+    private int usersGroupsId;
 
     @Column(name = "user_id")
-    private int user_id;
+    private int userId;
     
     @Column(name = "group_id")
-    private int group_id;
+    private int groupId;
     
     @Column(name = "group_admin")
-    private boolean group_admin;
+    private boolean groupAdmin;
 
     // Relații ManyToOne
     @ManyToOne(fetch = FetchType.LAZY)

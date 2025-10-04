@@ -36,7 +36,7 @@ public class AdminController {
     @PutMapping("/{id}")
     public ResponseEntity<Admin> updateAdmin(@PathVariable int id, @RequestBody Admin admin) {
         if (adminService.getAdminById(id).isPresent()) {
-            admin.setAdmin_id(id);
+            admin.setAdminId(id);
             return ResponseEntity.ok(adminService.saveAdmin(admin));
         }
         return ResponseEntity.notFound().build();

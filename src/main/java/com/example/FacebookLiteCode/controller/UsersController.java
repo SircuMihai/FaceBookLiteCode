@@ -36,7 +36,7 @@ public class UsersController {
     @PutMapping("/{id}")
     public ResponseEntity<Users> updateUser(@PathVariable int id, @RequestBody Users user) {
         if (usersService.getUserById(id).isPresent()) {
-            user.setUser_id(id);
+            user.setUserId(id);
             return ResponseEntity.ok(usersService.saveUser(user));
         }
         return ResponseEntity.notFound().build();

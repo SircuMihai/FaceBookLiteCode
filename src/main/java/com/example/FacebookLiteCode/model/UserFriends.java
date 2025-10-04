@@ -14,13 +14,13 @@ public class UserFriends {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_friends_id")
-    private int user_friends_id;
+    private int userFriendsId;
 
     @Column(name = "user_id")
-    private int user_id;
+    private int userId;
     
     @Column(name = "friend_id")
-    private int friend_id;
+    private int friendId;
 
     // Relații ManyToOne
     @ManyToOne(fetch = FetchType.LAZY)
