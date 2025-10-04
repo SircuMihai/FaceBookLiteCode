@@ -15,7 +15,7 @@ import java.util.List;
 public class Users {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "userId")
+    @Column(name = "user_id")
     private int userId;
     
     @Column(name = "username", nullable = false, unique = true)
@@ -27,10 +27,10 @@ public class Users {
     @Column(name = "password", nullable = false)
     private String password;
     
-    @Column(name = "firstName")
+    @Column(name = "first_name")
     private String firstName;
     
-    @Column(name = "lastName")
+    @Column(name = "last_name")
     private String lastName;
     
     @Column(name = "profile_picture")
