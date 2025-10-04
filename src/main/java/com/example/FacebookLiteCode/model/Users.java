@@ -54,4 +54,10 @@ public class Users {
     
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Mesages> messages;
+
+    @OneToMany
+    private List<Users> friends;
+
+    @OneToMany
+    private List<Users> chat;
 }
