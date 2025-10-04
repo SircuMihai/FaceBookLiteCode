@@ -15,10 +15,9 @@ public interface ComentsRepository extends JpaRepository<Coments, Integer> {
     List<Coments> findByPost(Post post);
     List<Coments> findByUser(Users user);
     List<Coments> findByPostPostId(int postId);
-    List<Coments> findByUserUser_id(int userId);
+    List<Coments> findByUserUserId(int userId); // corect camelCase
     List<Coments> findByContentContainingIgnoreCase(String content);
-    @Query("SELECT c FROM Coments c WHERE c.user.user_id = :userId")
-    List<Coments> findByUserId(@Param("userId") int userId);
 
-    List<Coments> findByUserUserId(int userId);
+    @Query("SELECT c FROM Coments c WHERE c.user.userId = :userId") // corect camelCase
+    List<Coments> findByUserId(@Param("userId") int userId);
 }

@@ -29,8 +29,4 @@ public class Users_Groups {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private Users user;
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "group_id", insertable = false, updatable = false)
-    private Groups group;
 }

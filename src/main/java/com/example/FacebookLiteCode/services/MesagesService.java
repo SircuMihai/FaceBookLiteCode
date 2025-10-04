@@ -1,6 +1,5 @@
 package com.example.FacebookLiteCode.services;
 
-import com.example.FacebookLiteCode.model.Groups;
 import com.example.FacebookLiteCode.model.Mesages;
 import com.example.FacebookLiteCode.model.Users;
 import com.example.FacebookLiteCode.repository.MesagesRepository;
@@ -36,16 +35,8 @@ public class MesagesService {
         return mesagesRepository.findByUser(user);
     }
     
-    public List<Mesages> getMessagesByGroup(Groups group) {
-        return mesagesRepository.findByGroup(group);
-    }
-    
     public List<Mesages> getMessagesByUserId(int userId) {
         return mesagesRepository.findByUserUserId(userId);
-    }
-    
-    public List<Mesages> getMessagesByGroupId(int groupId) {
-        return mesagesRepository.findByGroupGroupId(groupId);
     }
     
     public List<Mesages> getMessagesByIsPin(boolean isPin) {

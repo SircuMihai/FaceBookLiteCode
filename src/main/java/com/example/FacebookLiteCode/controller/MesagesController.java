@@ -56,11 +56,6 @@ public class MesagesController {
         return mesagesService.getMessagesByUserId(userId);
     }
     
-    @GetMapping("/group/{groupId}")
-    public List<Mesages> getMessagesByGroupId(@PathVariable int groupId) {
-        return mesagesService.getMessagesByGroupId(groupId);
-    }
-    
     @GetMapping("/pinned/{isPin}")
     public List<Mesages> getMessagesByIsPin(@PathVariable boolean isPin) {
         return mesagesService.getMessagesByIsPin(isPin);

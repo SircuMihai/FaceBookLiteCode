@@ -42,6 +42,9 @@ public class Users {
     @Column(name = "private_account")
     private boolean privateAccount;
 
+    @Column(name = "role")
+    private String role;
+
     // Relații OneToMany
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Post> posts;
