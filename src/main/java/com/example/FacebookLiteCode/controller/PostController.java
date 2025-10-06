@@ -1,6 +1,5 @@
 package com.example.FacebookLiteCode.controller;
 
-
 import com.example.FacebookLiteCode.model.Post;
 import com.example.FacebookLiteCode.model.Users;
 import com.example.FacebookLiteCode.services.PostService;
@@ -16,14 +15,29 @@ import java.util.Optional;
 @RequestMapping("/api/posts")
 @CrossOrigin(origins = "*")
 public class PostController {
-    
+
     @Autowired
     private PostService postService;
-    
+
     @Autowired
     private UsersService usersService;
 
-    
+    @GetMapping
+    public List<Post> getAllPosts() {
+        return postService.getAllPosts();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Post> getPostById(@PathVariable int id) {
+        Optional<Post> post = postService.getPostById(id);
+        return post.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping
+    public Post createPost(@RequestBody Post post) {
+        return postService.savePost(post);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<Post> updatePost(@PathVariable int id, @RequestBody Post post) {
         if (postService.getPostById(id).isPresent()) {
@@ -32,7 +46,7 @@ public class PostController {
         }
         return ResponseEntity.notFound().build();
     }
-    
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePost(@PathVariable int id) {
         if (postService.getPostById(id).isPresent()) {
@@ -41,17 +55,17 @@ public class PostController {
         }
         return ResponseEntity.notFound().build();
     }
-    
+
     @GetMapping("/user/{userId}")
     public List<Post> getPostsByUserId(@PathVariable int userId) {
         return postService.getPostsByUserId(userId);
     }
-    
+
     @GetMapping("/search/content/{content}")
     public List<Post> searchPostsByContent(@PathVariable String content) {
         return postService.getPostsByContent(content);
     }
-    
+
     @GetMapping("/search/date/{date}")
     public List<Post> searchPostsByDate(@PathVariable String date) {
         return postService.getPostsByDate(date);
