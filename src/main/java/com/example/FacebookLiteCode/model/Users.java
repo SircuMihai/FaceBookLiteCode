@@ -4,8 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import jakarta.persistence.*;
-import java.util.List;
+import org.hibernate.annotations.Fetch;
 
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -48,16 +49,21 @@ public class Users {
     // Relații OneToMany
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Post> posts;
-    
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Coments> comments;
-    
+
+    // Relații pentru prietenii (user1 și user2)
+    @OneToMany(mappedBy = "user1", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<FriendshipUser> friendshipsAsUser1;
+
+    @OneToMany(mappedBy = "user2", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<FriendshipUser> friendshipsAsUser2;
+
+    // Relații pentru mesaje trimise și primite
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Mesages> messages;
+    private List<Mesages> sentMessages;
 
-    @OneToMany
-    private List<Users> friends;
-
-    @OneToMany
-    private List<Users> chat;
+    @OneToMany(mappedBy = "resever", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Mesages> receivedMessages;
 }

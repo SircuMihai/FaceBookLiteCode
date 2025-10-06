@@ -29,6 +29,10 @@ public class Mesages {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private Users user;
+
+    @ManyToOne
+    @JoinColumn(name = "resever_id", nullable = false)
+    private Users resever;
     
 
 }
