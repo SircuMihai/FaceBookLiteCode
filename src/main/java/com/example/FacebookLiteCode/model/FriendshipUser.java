@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 @Data
 public class FriendshipUser {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "FriendshipId")
     private int frienshipId;
 
