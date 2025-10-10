@@ -56,6 +56,16 @@ public class MesagesController {
         return mesagesService.getMessagesByUserId(userId);
     }
     
+    @GetMapping("/receiver/{receiverId}")
+    public List<Mesages> getMessagesByReceiverId(@PathVariable int receiverId) {
+        return mesagesService.getMessagesByReceiverId(receiverId);
+    }
+
+    @GetMapping("/conversation/{user1Id}/{user2Id}")
+    public List<Mesages> getConversation(@PathVariable int user1Id, @PathVariable int user2Id) {
+        return mesagesService.getConversation(user1Id, user2Id);
+    }
+
     @GetMapping("/pinned/{isPin}")
     public List<Mesages> getMessagesByIsPin(@PathVariable boolean isPin) {
         return mesagesService.getMessagesByIsPin(isPin);

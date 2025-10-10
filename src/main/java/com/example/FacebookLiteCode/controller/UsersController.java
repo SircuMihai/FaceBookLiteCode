@@ -17,6 +17,22 @@ public class UsersController {
     @Autowired
     private UsersService usersService;
 
+    @GetMapping
+    public List<Users> getAllUsers() {
+        return usersService.getAllUsers();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Users> getUserById(@PathVariable int id) {
+        Optional<Users> user = usersService.getUserById(id);
+        return user.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping
+    public Users createUser(@RequestBody Users user) {
+        return usersService.saveUser(user);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<Users> updateUser(@PathVariable int id, @RequestBody Users user) {
         if (usersService.getUserById(id).isPresent()) {
@@ -61,7 +77,4 @@ public class UsersController {
     public List<Users> searchUsersByLastName(@PathVariable String lastName) {
         return usersService.findByLastNameContaining(lastName);
     }
-
 }
-
-

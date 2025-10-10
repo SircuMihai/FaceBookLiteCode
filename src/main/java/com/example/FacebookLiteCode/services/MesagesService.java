@@ -40,11 +40,23 @@ public class MesagesService {
         return mesagesRepository.findByUserUserId(userId);
     }
 
+    public List<Mesages> getMessagesByReceiver(Users receiver) {
+        return mesagesRepository.findByResever(receiver);
+    }
+
+    public List<Mesages> getMessagesByReceiverId(int receiverId) {
+        return mesagesRepository.findByReseverUserId(receiverId);
+    }
+
     public List<Mesages> getMessagesByIsPin(boolean isPin) {
         return mesagesRepository.findByIsPin(isPin);
     }
     
     public List<Mesages> getMessagesByContent(String message) {
         return mesagesRepository.findByMessageContainingIgnoreCase(message);
+    }
+
+    public List<Mesages> getConversation(int user1Id, int user2Id) {
+        return mesagesRepository.findConversation(user1Id, user2Id);
     }
 }
