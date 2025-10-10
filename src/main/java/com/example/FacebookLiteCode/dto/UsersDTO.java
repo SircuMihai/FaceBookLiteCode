@@ -11,10 +11,12 @@ public class UsersDTO {
     private int userId;
     private String username;
     private String email;
+    private String password;
     private String firstName;
     private String lastName;
     private String profilePicture;
     private String lastLogin;
     private boolean privateAccount;
     private String role;
+    
 }
