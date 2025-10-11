@@ -13,6 +13,5 @@ public class MessageResponseDTO {
     private String data;
     private boolean isPin;
     private int senderId;
-    private String senderUsername;
-    private String senderProfilePicture;
+    private int receiverId;
 }

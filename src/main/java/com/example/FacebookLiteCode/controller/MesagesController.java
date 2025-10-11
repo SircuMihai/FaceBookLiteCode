@@ -1,13 +1,14 @@
 package com.example.FacebookLiteCode.controller;
 
-import com.example.FacebookLiteCode.model.Mesages;
 import com.example.FacebookLiteCode.services.MesagesService;
+import com.example.FacebookLiteCode.dto.MessageRequestDTO;
+import com.example.FacebookLiteCode.dto.MessageResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/messages")
@@ -18,28 +19,31 @@ public class MesagesController {
     private MesagesService mesagesService;
     
     @GetMapping
-    public List<Mesages> getAllMessages() {
-        return mesagesService.getAllMessages();
+    public List<MessageResponseDTO> getAllMessages() {
+        return mesagesService.getAllMessagesDTO();
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<Mesages> getMessageById(@PathVariable int id) {
-        Optional<Mesages> message = mesagesService.getMessageById(id);
-        return message.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<MessageResponseDTO> getMessageById(@PathVariable int id) {
+        MessageResponseDTO dto = mesagesService.getMessageResponseById(id);
+        if (dto == null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(dto);
     }
     
     @PostMapping
-    public Mesages createMessage(@RequestBody Mesages message) {
-        return mesagesService.saveMessage(message);
+    public ResponseEntity<MessageResponseDTO> createMessage(@Valid @RequestBody MessageRequestDTO request) {
+        MessageResponseDTO created = mesagesService.createMessage(request);
+        return ResponseEntity.ok(created);
     }
     
     @PutMapping("/{id}")
-    public ResponseEntity<Mesages> updateMessage(@PathVariable int id, @RequestBody Mesages message) {
-        if (mesagesService.getMessageById(id).isPresent()) {
-            message.setMessageId(id);
-            return ResponseEntity.ok(mesagesService.saveMessage(message));
+    public ResponseEntity<MessageResponseDTO> updateMessage(@PathVariable int id, @Valid @RequestBody MessageRequestDTO request) {
+        try {
+            MessageResponseDTO updated = mesagesService.updateMessage(id, request);
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.notFound().build();
     }
     
     @DeleteMapping("/{id}")
@@ -52,27 +56,27 @@ public class MesagesController {
     }
     
     @GetMapping("/user/{userId}")
-    public List<Mesages> getMessagesByUserId(@PathVariable int userId) {
-        return mesagesService.getMessagesByUserId(userId);
+    public List<MessageResponseDTO> getMessagesByUserId(@PathVariable int userId) {
+        return mesagesService.getMessagesByUserIdDTO(userId);
     }
     
     @GetMapping("/receiver/{receiverId}")
-    public List<Mesages> getMessagesByReceiverId(@PathVariable int receiverId) {
-        return mesagesService.getMessagesByReceiverId(receiverId);
+    public List<MessageResponseDTO> getMessagesByReceiverId(@PathVariable int receiverId) {
+        return mesagesService.getMessagesByReceiverIdDTO(receiverId);
     }
 
     @GetMapping("/conversation/{user1Id}/{user2Id}")
-    public List<Mesages> getConversation(@PathVariable int user1Id, @PathVariable int user2Id) {
-        return mesagesService.getConversation(user1Id, user2Id);
+    public List<MessageResponseDTO> getConversation(@PathVariable int user1Id, @PathVariable int user2Id) {
+        return mesagesService.getConversationDTO(user1Id, user2Id);
     }
 
     @GetMapping("/pinned/{isPin}")
-    public List<Mesages> getMessagesByIsPin(@PathVariable boolean isPin) {
-        return mesagesService.getMessagesByIsPin(isPin);
+    public List<MessageResponseDTO> getMessagesByIsPin(@PathVariable boolean isPin) {
+        return mesagesService.getMessagesByIsPinDTO(isPin);
     }
     
     @GetMapping("/search/content/{message}")
-    public List<Mesages> searchMessagesByContent(@PathVariable String message) {
-        return mesagesService.getMessagesByContent(message);
+    public List<MessageResponseDTO> searchMessagesByContent(@PathVariable String message) {
+        return mesagesService.getMessagesByContentDTO(message);
     }
 }
