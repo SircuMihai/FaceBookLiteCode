@@ -1,13 +1,14 @@
 package com.example.FacebookLiteCode.controller;
 
-import com.example.FacebookLiteCode.model.Coments;
 import com.example.FacebookLiteCode.services.ComentsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.example.FacebookLiteCode.dto.CommentRequestDTO;
+import com.example.FacebookLiteCode.dto.CommentResponseDTO;
+import jakarta.validation.Valid;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/comments")
@@ -18,28 +19,27 @@ public class ComentsController {
     private ComentsService comentsService;
     
     @GetMapping
-    public List<Coments> getAllComments() {
-        return comentsService.getAllComments();
+    public List<CommentResponseDTO> getAllComments() {
+        return comentsService.getAllCommentsDTO();
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<Coments> getCommentById(@PathVariable int id) {
-        Optional<Coments> comment = comentsService.getCommentById(id);
-        return comment.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<CommentResponseDTO> getCommentById(@PathVariable int id) {
+        CommentResponseDTO dto = comentsService.getCommentResponseById(id);
+        if (dto == null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(dto);
     }
     
     @PostMapping
-    public Coments createComment(@RequestBody Coments comment) {
-        return comentsService.saveComment(comment);
+    public ResponseEntity<CommentResponseDTO> createComment(@Valid @RequestBody CommentRequestDTO request) {
+        return ResponseEntity.ok(comentsService.createComment(request));
     }
     
     @PutMapping("/{id}")
-    public ResponseEntity<Coments> updateComment(@PathVariable int id, @RequestBody Coments comment) {
-        if (comentsService.getCommentById(id).isPresent()) {
-            comment.setCommentId(id);
-            return ResponseEntity.ok(comentsService.saveComment(comment));
-        }
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<CommentResponseDTO> updateComment(@PathVariable int id, @Valid @RequestBody CommentRequestDTO request) {
+        return comentsService.updateComment(id, request)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
     
     @DeleteMapping("/{id}")
@@ -52,17 +52,17 @@ public class ComentsController {
     }
     
     @GetMapping("/post/{postId}")
-    public List<Coments> getCommentsByPostId(@PathVariable int postId) {
-        return comentsService.getCommentsByPostId(postId);
+    public List<CommentResponseDTO> getCommentsByPostId(@PathVariable int postId) {
+        return comentsService.getCommentsByPostIdDTO(postId);
     }
     
     @GetMapping("/user/{userId}")
-    public List<Coments> getCommentsByUserId(@PathVariable int userId) {
-        return comentsService.getCommentsByUserId(userId);
+    public List<CommentResponseDTO> getCommentsByUserId(@PathVariable int userId) {
+        return comentsService.getCommentsByUserIdDTO(userId);
     }
     
     @GetMapping("/search/content/{content}")
-    public List<Coments> searchCommentsByContent(@PathVariable String content) {
-        return comentsService.getCommentsByContent(content);
+    public List<CommentResponseDTO> searchCommentsByContent(@PathVariable String content) {
+        return comentsService.getCommentsByContentDTO(content);
     }
 }

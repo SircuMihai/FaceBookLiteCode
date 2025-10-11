@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import jakarta.validation.constraints.*;
+import com.fasterxml.jackson.annotation.JsonAlias;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -14,13 +15,17 @@ public class MessageRequestDTO {
     private String message;
     
     // Optional string date; consider switching to a proper date type later
+    @JsonAlias({"data"})
     private String data;
 
     @NotNull(message = "Sender user ID is required")
+    @JsonAlias({"sender_user_id", "senderUserId", "user_id"})
     private Integer senderUserId;
 
     @NotNull(message = "Recipient user ID is required")
+    @JsonAlias({"recipient_user_id", "recipientUserId", "resever_id"})
     private Integer recipientUserId;
     
+    @JsonAlias({"is_pin", "pin", "isPin"})
     private boolean isPin;
 }

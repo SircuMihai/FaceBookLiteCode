@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class FriendshipUserService {
@@ -84,6 +85,69 @@ public class FriendshipUserService {
         if (f.getUser2() != null) res.setUser2Id(f.getUser2().getUserId());
         res.setStatus(f.getStatus());
         return res;
+    }
+
+    public Optional<FriendshipResponseDTO> updateFriendship(int id, FriendshipRequestDTO dto) {
+        Optional<FriendshipUser> existingOpt = friendshipUserRepository.findById(id);
+        if (existingOpt.isEmpty()) {
+            return Optional.empty();
+        }
+
+        FriendshipUser existing = existingOpt.get();
+
+        if (dto.getUser1Id() != null) {
+            Users user1 = usersRepository.findById(dto.getUser1Id())
+                    .orElseThrow(() -> new IllegalArgumentException("User1 not found: " + dto.getUser1Id()));
+            existing.setUser1(user1);
+        }
+
+        if (dto.getUser2Id() != null) {
+            Users user2 = usersRepository.findById(dto.getUser2Id())
+                    .orElseThrow(() -> new IllegalArgumentException("User2 not found: " + dto.getUser2Id()));
+            existing.setUser2(user2);
+        }
+
+        if (dto.getStatus() != null) {
+            existing.setStatus(dto.getStatus());
+        }
+
+        FriendshipUser saved = friendshipUserRepository.save(existing);
+        return Optional.of(toResponseDTO(saved));
+    }
+
+    public List<FriendshipResponseDTO> getAllFriendshipsDTO() {
+        return friendshipUserRepository.findAll().stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    public FriendshipResponseDTO getFriendshipResponseById(int id) {
+        return friendshipUserRepository.findById(id)
+                .map(this::toResponseDTO)
+                .orElse(null);
+    }
+
+    public List<FriendshipResponseDTO> getFriendshipsByUser1IdDTO(int user1Id) {
+        return friendshipUserRepository.findByUser1UserId(user1Id).stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<FriendshipResponseDTO> getFriendshipsByUser2IdDTO(int user2Id) {
+        return friendshipUserRepository.findByUser2UserId(user2Id).stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<FriendshipResponseDTO> getFriendshipsByStatusDTO(String status) {
+        return friendshipUserRepository.findByStatus(status).stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    public Optional<FriendshipResponseDTO> getFriendshipBetweenUsersDTO(int user1Id, int user2Id) {
+        return friendshipUserRepository.findByUser1UserIdAndUser2UserId(user1Id, user2Id)
+                .map(this::toResponseDTO);
     }
 }
 

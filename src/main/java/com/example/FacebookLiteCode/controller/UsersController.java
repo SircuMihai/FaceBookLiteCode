@@ -1,13 +1,14 @@
 package com.example.FacebookLiteCode.controller;
 
-import com.example.FacebookLiteCode.model.Users;
 import com.example.FacebookLiteCode.services.UsersService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.example.FacebookLiteCode.dto.UserRequestDTO;
+import com.example.FacebookLiteCode.dto.UserResponseDTO;
+import jakarta.validation.Valid;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/users")
@@ -18,28 +19,27 @@ public class UsersController {
     private UsersService usersService;
 
     @GetMapping
-    public List<Users> getAllUsers() {
-        return usersService.getAllUsers();
+    public List<UserResponseDTO> getAllUsers() {
+        return usersService.getAllUsersDTO();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Users> getUserById(@PathVariable int id) {
-        Optional<Users> user = usersService.getUserById(id);
-        return user.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<UserResponseDTO> getUserById(@PathVariable int id) {
+        UserResponseDTO user = usersService.getUserResponseById(id);
+        if (user == null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(user);
     }
 
     @PostMapping
-    public Users createUser(@RequestBody Users user) {
-        return usersService.saveUser(user);
+    public ResponseEntity<UserResponseDTO> createUser(@Valid @RequestBody UserRequestDTO request) {
+        return ResponseEntity.ok(usersService.createUser(request));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Users> updateUser(@PathVariable int id, @RequestBody Users user) {
-        if (usersService.getUserById(id).isPresent()) {
-            user.setUserId(id);
-            return ResponseEntity.ok(usersService.saveUser(user));
-        }
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<UserResponseDTO> updateUser(@PathVariable int id, @Valid @RequestBody UserRequestDTO request) {
+        return usersService.updateUser(id, request)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
@@ -52,29 +52,31 @@ public class UsersController {
     }
 
     @GetMapping("/username/{username}")
-    public ResponseEntity<Users> getUserByUsername(@PathVariable String username) {
-        Optional<Users> user = usersService.findByUsername(username);
-        return user.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<UserResponseDTO> getUserByUsername(@PathVariable String username) {
+        return usersService.findByUsernameDTO(username)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/email/{email}")
-    public ResponseEntity<Users> getUserByEmail(@PathVariable String email) {
-        Optional<Users> user = usersService.findByEmail(email);
-        return user.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<UserResponseDTO> getUserByEmail(@PathVariable String email) {
+        return usersService.findByEmailDTO(email)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/private/{privateAccount}")
-    public List<Users> getUsersByPrivateAccount(@PathVariable boolean privateAccount) {
-        return usersService.findByPrivateAccount(privateAccount);
+    public List<UserResponseDTO> getUsersByPrivateAccount(@PathVariable boolean privateAccount) {
+        return usersService.findByPrivateAccountDTO(privateAccount);
     }
 
     @GetMapping("/search/firstname/{firstName}")
-    public List<Users> searchUsersByFirstName(@PathVariable String firstName) {
-        return usersService.findByFirstNameContaining(firstName);
+    public List<UserResponseDTO> searchUsersByFirstName(@PathVariable String firstName) {
+        return usersService.findByFirstNameContainingDTO(firstName);
     }
 
     @GetMapping("/search/lastname/{lastName}")
-    public List<Users> searchUsersByLastName(@PathVariable String lastName) {
-        return usersService.findByLastNameContaining(lastName);
+    public List<UserResponseDTO> searchUsersByLastName(@PathVariable String lastName) {
+        return usersService.findByLastNameContainingDTO(lastName);
     }
 }

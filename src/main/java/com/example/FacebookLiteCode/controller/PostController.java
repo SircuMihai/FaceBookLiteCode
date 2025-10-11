@@ -1,15 +1,14 @@
 package com.example.FacebookLiteCode.controller;
 
-import com.example.FacebookLiteCode.model.Post;
-import com.example.FacebookLiteCode.model.Users;
 import com.example.FacebookLiteCode.services.PostService;
-import com.example.FacebookLiteCode.services.UsersService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.example.FacebookLiteCode.dto.PostRequestDTO;
+import com.example.FacebookLiteCode.dto.PostResponseDTO;
+import jakarta.validation.Valid;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -19,32 +18,28 @@ public class PostController {
     @Autowired
     private PostService postService;
 
-    @Autowired
-    private UsersService usersService;
-
     @GetMapping
-    public List<Post> getAllPosts() {
-        return postService.getAllPosts();
+    public List<PostResponseDTO> getAllPosts() {
+        return postService.getAllPostsDTO();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Post> getPostById(@PathVariable int id) {
-        Optional<Post> post = postService.getPostById(id);
-        return post.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<PostResponseDTO> getPostById(@PathVariable int id) {
+        PostResponseDTO post = postService.getPostResponseById(id);
+        if (post == null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(post);
     }
 
     @PostMapping
-    public Post createPost(@RequestBody Post post) {
-        return postService.savePost(post);
+    public ResponseEntity<PostResponseDTO> createPost(@Valid @RequestBody PostRequestDTO request) {
+        return ResponseEntity.ok(postService.createPost(request));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Post> updatePost(@PathVariable int id, @RequestBody Post post) {
-        if (postService.getPostById(id).isPresent()) {
-            post.setPostId(id);
-            return ResponseEntity.ok(postService.savePost(post));
-        }
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<PostResponseDTO> updatePost(@PathVariable int id, @Valid @RequestBody PostRequestDTO request) {
+        return postService.updatePost(id, request)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
@@ -57,17 +52,17 @@ public class PostController {
     }
 
     @GetMapping("/user/{userId}")
-    public List<Post> getPostsByUserId(@PathVariable int userId) {
-        return postService.getPostsByUserId(userId);
+    public List<PostResponseDTO> getPostsByUserId(@PathVariable int userId) {
+        return postService.getPostsByUserIdDTO(userId);
     }
 
     @GetMapping("/search/content/{content}")
-    public List<Post> searchPostsByContent(@PathVariable String content) {
-        return postService.getPostsByContent(content);
+    public List<PostResponseDTO> searchPostsByContent(@PathVariable String content) {
+        return postService.getPostsByContentDTO(content);
     }
 
     @GetMapping("/search/date/{date}")
-    public List<Post> searchPostsByDate(@PathVariable String date) {
-        return postService.getPostsByDate(date);
+    public List<PostResponseDTO> searchPostsByDate(@PathVariable String date) {
+        return postService.getPostsByDateDTO(date);
     }
 }
