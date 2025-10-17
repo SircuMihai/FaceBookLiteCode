@@ -40,6 +40,12 @@ class FacebookLiteApp {
         if (postForm) {
             postForm.addEventListener('submit', (e) => this.handleCreatePost(e));
         }
+
+        // Edit profile form
+        const editProfileForm = document.getElementById('edit-profile-form');
+        if (editProfileForm) {
+            editProfileForm.addEventListener('submit', (e) => this.handleEditProfile(e));
+        }
     }
 
     // Navigation Functions
@@ -60,6 +66,8 @@ class FacebookLiteApp {
         // Load page-specific content
         if (pageId === 'dashboard-page' && this.currentUser) {
             this.loadDashboard();
+        } else if (pageId === 'profile-page' && this.currentUser) {
+            this.loadProfile();
         }
     }
 
@@ -200,6 +208,56 @@ class FacebookLiteApp {
         await this.loadPosts();
     }
 
+    // Profile Functions
+    async loadProfile() {
+        if (!this.currentUser) return;
+
+        // Update profile header
+        document.getElementById('profile-username').textContent = this.currentUser.username;
+        document.getElementById('profile-email').textContent = this.currentUser.email;
+        document.getElementById('profile-name').textContent = `${this.currentUser.firstName || ''} ${this.currentUser.lastName || ''}`.trim();
+
+        // Update profile details
+        document.getElementById('profile-username-detail').textContent = this.currentUser.username;
+        document.getElementById('profile-email-detail').textContent = this.currentUser.email;
+        document.getElementById('profile-firstname-detail').textContent = this.currentUser.firstName || 'Not set';
+        document.getElementById('profile-lastname-detail').textContent = this.currentUser.lastName || 'Not set';
+        document.getElementById('profile-account-type').textContent = this.currentUser.privateAccount ? 'Private' : 'Public';
+        document.getElementById('profile-last-login').textContent = this.currentUser.lastLogin || 'Never';
+
+        // Load user's posts
+        await this.loadUserPosts();
+    }
+
+    async loadUserPosts() {
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/posts/user/${this.currentUser.userId}`);
+            const posts = await response.json();
+            this.displayUserPosts(posts);
+        } catch (error) {
+            console.error('Error loading user posts:', error);
+            // Fallback to all posts if user-specific endpoint doesn't exist
+            await this.loadPosts();
+        }
+    }
+
+    displayUserPosts(posts) {
+        const userPostsContainer = document.getElementById('user-posts');
+        if (!userPostsContainer) return;
+
+        if (posts.length === 0) {
+            userPostsContainer.innerHTML = '<p class="text-center">No posts yet. Create your first post!</p>';
+            return;
+        }
+
+        userPostsContainer.innerHTML = posts.map(post => `
+            <div class="user-post-item">
+                <div class="user-post-content">${post.content}</div>
+                <div class="user-post-date">${this.formatDate(post.createdAt)}</div>
+            </div>
+        `).join('');
+    }
+
     async loadPosts() {
         try {
             const response = await fetch(`${this.apiBaseUrl}/posts`);
@@ -313,6 +371,68 @@ class FacebookLiteApp {
         if (!dateString) return 'Unknown date';
         const date = new Date(dateString);
         return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    }
+
+    // Profile Modal Functions
+    editProfile() {
+        if (!this.currentUser) return;
+
+        // Populate form with current user data
+        document.getElementById('edit-firstname').value = this.currentUser.firstName || '';
+        document.getElementById('edit-lastname').value = this.currentUser.lastName || '';
+        document.getElementById('edit-email').value = this.currentUser.email || '';
+        document.getElementById('edit-username').value = this.currentUser.username || '';
+        document.getElementById('edit-private').checked = this.currentUser.privateAccount || false;
+
+        // Show modal
+        document.getElementById('edit-profile-modal').classList.remove('hidden');
+    }
+
+    closeEditProfile() {
+        document.getElementById('edit-profile-modal').classList.add('hidden');
+    }
+
+    async handleEditProfile(e) {
+        e.preventDefault();
+        if (!this.currentUser) return;
+
+        this.showLoading(true);
+
+        const formData = new FormData(e.target);
+        const updateData = {
+            firstName: formData.get('firstName'),
+            lastName: formData.get('lastName'),
+            email: formData.get('email'),
+            username: formData.get('username'),
+            privateAccount: formData.get('privateAccount') === 'on'
+        };
+
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/users/${this.currentUser.userId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(updateData)
+            });
+
+            if (response.ok) {
+                const updatedUser = await response.json();
+                this.currentUser = updatedUser;
+                localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+                this.showToast('Profile updated successfully!', 'success');
+                this.closeEditProfile();
+                this.loadProfile(); // Reload profile page
+            } else {
+                const error = await response.text();
+                this.showToast('Failed to update profile: ' + error, 'error');
+            }
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            this.showToast('Failed to update profile', 'error');
+        } finally {
+            this.showLoading(false);
+        }
     }
 
     // Post Actions (placeholder functions)
