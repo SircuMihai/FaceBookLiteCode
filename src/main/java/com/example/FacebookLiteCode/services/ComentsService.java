@@ -81,6 +81,11 @@ public class ComentsService {
     }
 
     public CommentResponseDTO createComment(CommentRequestDTO dto) {
+        // Validate character count (70 characters max)
+        if (dto.getContent().length() > 70) {
+            throw new IllegalArgumentException("Comment exceeds 70 characters limit");
+        }
+        
         Users user = usersRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + dto.getUserId()));
         Post post = postRepository.findById(dto.getPostId())
@@ -88,6 +93,13 @@ public class ComentsService {
         Coments entity = commentMapper.toEntity(dto, user, post);
         Coments saved = comentsRepository.save(entity);
         return commentMapper.toResponseDTO(saved);
+    }
+    
+    private int countWords(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            return 0;
+        }
+        return text.trim().split("\\s+").length;
     }
 
     public Optional<CommentResponseDTO> updateComment(int id, CommentRequestDTO dto) {

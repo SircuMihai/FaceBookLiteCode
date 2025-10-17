@@ -19,6 +19,9 @@ public class Coments {
     @Column(name = "content", nullable = false)
     private String content;
     
+    @Column(name = "created_at")
+    private String createdAt;
+    
     // Relații
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id", nullable = false)

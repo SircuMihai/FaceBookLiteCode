@@ -38,8 +38,21 @@ public class PostMapper {
             dto.setUserProfilePicture(post.getUser().getProfilePicture());
         }
         
-        // Comments temporarily disabled
-        // dto.setComments(new java.util.ArrayList<>());
+        // Load comments if available
+        try {
+            if (post.getComments() != null && !post.getComments().isEmpty()) {
+                List<CommentResponseDTO> commentDTOs = post.getComments().stream()
+                        .map(commentMapper::toResponseDTO)
+                        .collect(Collectors.toList());
+                dto.setComments(commentDTOs);
+            } else {
+                dto.setComments(new java.util.ArrayList<>());
+            }
+        } catch (Exception e) {
+            // If there's an issue loading comments, set empty list
+            System.err.println("Error loading comments: " + e.getMessage());
+            dto.setComments(new java.util.ArrayList<>());
+        }
         
         return dto;
     }

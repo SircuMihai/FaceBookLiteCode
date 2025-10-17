@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 public class CommentResponseDTO {
     private int commentId;
     private String content;
+    private String createdAt;
     private int postId;
     private int userId;
     private String username;

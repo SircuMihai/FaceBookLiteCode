@@ -4,21 +4,18 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import jakarta.validation.constraints.*;
-import com.fasterxml.jackson.annotation.JsonAlias;
 
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
 public class CommentRequestDTO {
-    @NotBlank(message = "Content is required")
-    @Size(max = 1000, message = "Comment must not exceed 1000 characters")
+    @NotBlank(message = "Comment content is required")
+    @Size(max = 50, message = "Comment must not exceed 50 words")
     private String content;
     
     @NotNull(message = "Post ID is required")
-    @JsonAlias({"post_id", "postId"})
     private Integer postId;
-
+    
     @NotNull(message = "User ID is required")
-    @JsonAlias({"user_id", "userId"})
     private Integer userId;
 }

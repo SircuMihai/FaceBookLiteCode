@@ -19,6 +19,7 @@ public class CommentMapper {
         CommentResponseDTO dto = new CommentResponseDTO();
         dto.setCommentId(comment.getCommentId());
         dto.setContent(comment.getContent());
+        dto.setCreatedAt(comment.getCreatedAt());
         
         if (comment.getPost() != null) {
             dto.setPostId(comment.getPost().getPostId());

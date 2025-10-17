@@ -504,6 +504,7 @@ body {
 .likes-count, .comments-count {
     cursor: pointer;
     transition: color 0.3s ease;
+    margin-right: 15px;
 }
 
 .likes-count:hover, .comments-count:hover {
@@ -562,27 +563,56 @@ body {
 
 .comment-form {
     display: flex;
+    flex-direction: column;
     gap: 10px;
-    align-items: center;
+    margin-top: 10px;
 }
 
 .comment-input {
-    flex: 1;
+    width: 100%;
     padding: 8px 12px;
     border: 1px solid var(--medium-gray);
-    border-radius: 20px;
+    border-radius: 8px;
     font-size: 0.9em;
     outline: none;
     transition: border-color 0.3s ease;
+    resize: vertical;
+    min-height: 40px;
 }
 
 .comment-input:focus {
     border-color: var(--primary-green);
 }
 
+.word-count {
+    font-size: 0.8em;
+    color: #666;
+    text-align: right;
+}
+
+.delete-comment-btn {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-left: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.delete-comment-btn:hover {
+    background: #c0392b;
+}
+
 .btn-small {
     padding: 8px 15px;
     font-size: 0.8em;
+    align-self: flex-end;
 }
 
 /* Responsive Design */

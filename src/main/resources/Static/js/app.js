@@ -304,14 +304,30 @@ class FacebookLiteApp {
                 <div class="post-content">${post.content}</div>
                 <div class="post-stats">
                     <span class="likes-count">${post.likesCount || 0} likes</span>
+                    <span class="comments-count">${post.comments ? post.comments.length : 0} comments</span>
                 </div>
                 <div class="post-actions">
                     <button class="post-action like-btn" id="like-btn-${post.postId}" onclick="app.toggleLike(${post.postId})">
                         <i class="fas fa-heart"></i> <span class="like-text">Like</span>
                     </button>
-                    <button class="post-action" onclick="app.showToast('Comments coming soon!', 'success')">
+                    <button class="post-action" onclick="app.toggleComments(${post.postId})">
                         <i class="fas fa-comment"></i> Comment
                     </button>
+                </div>
+                <div class="post-comments" id="comments-${post.postId}" style="display: none;">
+                    <div class="comments-list" id="comments-list-${post.postId}">
+                        ${post.comments ? post.comments.map(comment => `
+                            <div class="comment-item">
+                                <strong>${comment.username}:</strong> ${comment.content}
+                                ${comment.userId === this.currentUser?.userId ? `<button class="delete-comment-btn" onclick="app.deleteComment(${comment.commentId})">×</button>` : ''}
+                            </div>
+                        `).join('') : ''}
+                    </div>
+                    <div class="comment-form">
+                        <input type="text" id="comment-input-${post.postId}" placeholder="Write a comment (max 70 characters)..." class="comment-input" maxlength="70">
+                        <div class="word-count" id="word-count-${post.postId}">0/70 characters</div>
+                        <button onclick="app.addComment(${post.postId})" class="btn btn-primary btn-small">Post</button>
+                    </div>
                 </div>
             </div>
         `).join('');
@@ -896,7 +912,7 @@ class FacebookLiteApp {
             this.showToast('No conversation selected', 'error');
             return;
         }
-        
+
         console.log('Sending message:', {
             message: content,
             senderUserId: this.currentUser.userId,
@@ -1064,9 +1080,34 @@ class FacebookLiteApp {
         const commentsDiv = document.getElementById(`comments-${postId}`);
         if (commentsDiv) {
             commentsDiv.style.display = commentsDiv.style.display === 'none' ? 'block' : 'none';
+            
+            // Add word count listener when comments are shown
+            if (commentsDiv.style.display === 'block') {
+                this.addWordCountListener(postId);
+            }
         }
     }
-
+    
+    addWordCountListener(postId) {
+        const input = document.getElementById(`comment-input-${postId}`);
+        const wordCount = document.getElementById(`word-count-${postId}`);
+        
+        if (input && wordCount) {
+            input.addEventListener('input', () => {
+                const charCount = input.value.length;
+                wordCount.textContent = `${charCount}/70 characters`;
+                
+                if (charCount > 70) {
+                    wordCount.style.color = '#e74c3c';
+                    input.style.borderColor = '#e74c3c';
+                } else {
+                    wordCount.style.color = '#666';
+                    input.style.borderColor = '';
+                }
+            });
+        }
+    }
+    
     async addComment(postId) {
         if (!this.currentUser) {
             this.showToast('Please log in to comment', 'error');
@@ -1078,6 +1119,12 @@ class FacebookLiteApp {
         
         if (!content) {
             this.showToast('Please enter a comment', 'error');
+            return;
+        }
+        
+        // Check character count
+        if (content.length > 70) {
+            this.showToast('Comment exceeds 70 characters limit', 'error');
             return;
         }
 
@@ -1098,8 +1145,8 @@ class FacebookLiteApp {
                 const newComment = await response.json();
                 this.showToast('Comment added!', 'success');
                 commentInput.value = '';
-                // Reload posts to show updated comments
-                await this.loadPosts();
+                document.getElementById(`word-count-${postId}`).textContent = '0/70 characters';
+                this.loadComments(postId);
             } else {
                 this.showToast('Failed to add comment', 'error');
             }
@@ -1108,6 +1155,58 @@ class FacebookLiteApp {
             this.showToast('Error adding comment', 'error');
         }
     }
+    
+    async loadComments(postId) {
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/comments/post/${postId}`);
+            if (response.ok) {
+                const comments = await response.json();
+                this.displayComments(postId, comments);
+            }
+        } catch (error) {
+            console.error('Error loading comments:', error);
+        }
+    }
+    
+    displayComments(postId, comments) {
+        const commentsList = document.getElementById(`comments-list-${postId}`);
+        if (commentsList) {
+            commentsList.innerHTML = comments.map(comment => `
+                <div class="comment-item">
+                    <strong>${comment.username}:</strong> ${comment.content}
+                    ${comment.userId === this.currentUser?.userId ? `<button class="delete-comment-btn" onclick="app.deleteComment(${comment.commentId})">×</button>` : ''}
+                </div>
+            `).join('');
+        }
+    }
+    
+    async deleteComment(commentId) {
+        if (!this.currentUser) {
+            this.showToast('Please log in to delete comments', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/comments/${commentId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                this.showToast('Comment deleted!', 'success');
+                // Reload all comments for all posts
+                document.querySelectorAll('[id^="comments-"]').forEach(commentsDiv => {
+                    const postId = commentsDiv.id.replace('comments-', '');
+                    this.loadComments(parseInt(postId));
+                });
+            } else {
+                this.showToast('Failed to delete comment', 'error');
+            }
+        } catch (error) {
+            console.error('Error deleting comment:', error);
+            this.showToast('Error deleting comment', 'error');
+        }
+    }
+
 }
 
 // Initialize the application
