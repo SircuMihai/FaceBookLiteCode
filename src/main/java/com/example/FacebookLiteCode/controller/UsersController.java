@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.example.FacebookLiteCode.dto.UserRequestDTO;
+import com.example.FacebookLiteCode.dto.UpdateUserRequestDTO;
 import com.example.FacebookLiteCode.dto.UserResponseDTO;
 import jakarta.validation.Valid;
 
@@ -36,7 +37,7 @@ public class UsersController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserResponseDTO> updateUser(@PathVariable int id, @Valid @RequestBody UserRequestDTO request) {
+    public ResponseEntity<UserResponseDTO> updateUser(@PathVariable int id, @Valid @RequestBody UpdateUserRequestDTO request) {
         return usersService.updateUser(id, request)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

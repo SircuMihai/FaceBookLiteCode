@@ -5,6 +5,7 @@ import com.example.FacebookLiteCode.repository.UsersRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.example.FacebookLiteCode.dto.UserRequestDTO;
+import com.example.FacebookLiteCode.dto.UpdateUserRequestDTO;
 import com.example.FacebookLiteCode.dto.UserResponseDTO;
 import com.example.FacebookLiteCode.dto.mapper.UserMapper;
 
@@ -76,11 +77,11 @@ public class UsersService {
         return userMapper.toResponseDTO(saved);
     }
 
-    public Optional<UserResponseDTO> updateUser(int id, UserRequestDTO dto) {
+    public Optional<UserResponseDTO> updateUser(int id, UpdateUserRequestDTO dto) {
         Optional<Users> existingOpt = usersRepository.findById(id);
         if (existingOpt.isEmpty()) return Optional.empty();
         Users existing = existingOpt.get();
-        userMapper.updateEntityFromDTO(dto, existing);
+        userMapper.updateEntityFromUpdateDTO(dto, existing);
         Users saved = usersRepository.save(existing);
         return Optional.of(userMapper.toResponseDTO(saved));
     }
