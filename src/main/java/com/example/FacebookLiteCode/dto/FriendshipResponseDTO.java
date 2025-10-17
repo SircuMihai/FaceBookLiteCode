@@ -12,4 +12,6 @@ public class FriendshipResponseDTO {
     private int user1Id;
     private int user2Id;
     private String status;
+    private UserResponseDTO user1;
+    private UserResponseDTO user2;
 }

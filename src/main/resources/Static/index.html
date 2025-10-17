@@ -121,10 +121,12 @@
             <div class="dashboard-container">
                 <div class="dashboard-header">
                     <h2>Welcome, <span id="user-name"></span>!</h2>
-                    <div class="dashboard-actions">
-                        <button class="btn btn-primary" onclick="app.showPage('profile-page')">Profile</button>
-                        <button class="btn btn-secondary" onclick="logout()">Logout</button>
-                    </div>
+                <div class="dashboard-actions">
+                    <button class="btn btn-primary" onclick="app.showPage('profile-page')">Profile</button>
+                    <button class="btn btn-primary" onclick="app.showPage('friends-page')">Friends</button>
+                    <button class="btn btn-primary" onclick="app.showPage('messages-page')">Messages</button>
+                    <button class="btn btn-secondary" onclick="logout()">Logout</button>
+                </div>
                 </div>
                 <div class="dashboard-content">
                     <div class="post-section">
@@ -202,6 +204,83 @@
             </div>
         </section>
 
+        <!-- Friends Page -->
+        <section id="friends-page" class="page">
+            <div class="friends-container">
+                <div class="friends-header">
+                    <h2>Find Friends</h2>
+                    <button class="btn btn-secondary" onclick="app.showPage('dashboard-page')">Back to Dashboard</button>
+                </div>
+                
+                <div class="friends-content">
+                    <div class="search-section">
+                        <h3>Search for Friends</h3>
+                        <div class="search-form">
+                            <input type="text" id="friend-search" placeholder="Search by username, first name, or last name..." onkeyup="app.searchFriends()">
+                            <button class="btn btn-primary" onclick="app.searchFriends()">Search</button>
+                            <button class="btn btn-secondary" onclick="app.testSearch()">Test Search</button>
+                        </div>
+                    </div>
+
+                    <div class="search-results" id="search-results">
+                        <!-- Search results will be loaded here -->
+                    </div>
+
+                    <div class="friend-requests-section">
+                        <h3>Friend Requests</h3>
+                        <div class="friend-requests" id="friend-requests">
+                            <!-- Friend requests will be loaded here -->
+                        </div>
+                    </div>
+
+                    <div class="current-friends-section">
+                        <h3>My Friends</h3>
+                        <div class="current-friends" id="current-friends">
+                            <!-- Current friends will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+    </section>
+
+        <!-- Messages Page -->
+        <section id="messages-page" class="page">
+            <div class="messages-container">
+                <div class="messages-header">
+                    <h2>Messages</h2>
+                    <button class="btn btn-secondary" onclick="app.showPage('dashboard-page')">Back to Dashboard</button>
+                </div>
+                
+                <div class="messages-content">
+                    <div class="conversations-list">
+                        <h3>Conversations</h3>
+                        <div class="conversations" id="conversations-list">
+                            <!-- Conversations will be loaded here -->
+                        </div>
+                    </div>
+                    
+                    <div class="chat-area">
+                        <div class="chat-header" id="chat-header">
+                            <h3>Select a conversation to start messaging</h3>
+                        </div>
+                        
+                        <div class="chat-messages" id="chat-messages">
+                            <!-- Messages will be displayed here -->
+            </div>
+                        
+                        <div class="chat-input-area" id="chat-input-area" style="display: none;">
+                            <form id="message-form">
+                                <div class="message-input-group">
+                                    <input type="text" id="message-input" placeholder="Type a message..." required>
+                                    <button type="submit" class="btn btn-primary">Send</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    </section>
+
         <!-- Edit Profile Modal -->
         <div id="edit-profile-modal" class="modal hidden">
             <div class="modal-content">
@@ -237,7 +316,7 @@
                 </form>
             </div>
         </div>
-    </main>
+</main>
 
     <!-- Loading Spinner -->
     <div id="loading" class="loading hidden">

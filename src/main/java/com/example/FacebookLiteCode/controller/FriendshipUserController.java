@@ -81,4 +81,54 @@ public class FriendshipUserController {
     public List<FriendshipResponseDTO> getByStatus(@PathVariable String status) {
         return friendshipUserService.getFriendshipsByStatusDTO(status);
     }
+
+    // Friend request endpoints
+    @PostMapping("/friend-request")
+    public ResponseEntity<FriendshipResponseDTO> sendFriendRequest(@RequestBody FriendshipRequestDTO request) {
+        try {
+            FriendshipResponseDTO created = friendshipUserService.createFriendship(request);
+            return ResponseEntity.ok(created);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/requests/{userId}")
+    public List<FriendshipResponseDTO> getFriendRequests(@PathVariable int userId) {
+        return friendshipUserService.getFriendRequestsDTO(userId);
+    }
+
+    @GetMapping("/friends/{userId}")
+    public List<FriendshipResponseDTO> getFriends(@PathVariable int userId) {
+        return friendshipUserService.getFriendsDTO(userId);
+    }
+
+    @PutMapping("/{id}/accept")
+    public ResponseEntity<FriendshipResponseDTO> acceptFriendRequest(@PathVariable int id) {
+        try {
+            return friendshipUserService.acceptFriendship(id)
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @DeleteMapping("/{id}/decline")
+    public ResponseEntity<Void> declineFriendRequest(@PathVariable int id) {
+        if (friendshipUserService.getFriendshipById(id).isPresent()) {
+            friendshipUserService.deleteFriendship(id);
+            return ResponseEntity.ok().build();
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @DeleteMapping("/{id}/remove")
+    public ResponseEntity<Void> removeFriend(@PathVariable int id) {
+        if (friendshipUserService.getFriendshipById(id).isPresent()) {
+            friendshipUserService.deleteFriendship(id);
+            return ResponseEntity.ok().build();
+        }
+        return ResponseEntity.notFound().build();
+    }
 }

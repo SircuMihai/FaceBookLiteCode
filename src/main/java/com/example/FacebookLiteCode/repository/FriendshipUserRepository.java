@@ -16,4 +16,8 @@ public interface FriendshipUserRepository extends JpaRepository<FriendshipUser, 
     List<FriendshipUser> findByUser2UserId(int user2Id);
     List<FriendshipUser> findByStatus(String status);
     Optional<FriendshipUser> findByUser1UserIdAndUser2UserId(int user1Id, int user2Id);
+    
+    // Friend request methods
+    List<FriendshipUser> findByUser2UserIdAndStatus(int user2Id, String status);
+    List<FriendshipUser> findByUser1UserIdAndStatus(int user1Id, String status);
 }
