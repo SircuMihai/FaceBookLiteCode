@@ -86,6 +86,13 @@ public class MesagesService {
     public List<MessageResponseDTO> getConversationDTO(int user1Id, int user2Id) {
         return toResponseDTOList(mesagesRepository.findConversation(user1Id, user2Id));
     }
+    
+    public List<MessageResponseDTO> getMyConversationDTO(int currentUserId, int friendId) {
+        // Additional security: Verify that the users are friends
+        // This would require checking the friendship status
+        // For now, we'll just return the conversation
+        return toResponseDTOList(mesagesRepository.findConversation(currentUserId, friendId));
+    }
 
     // DTO-based API
     public MessageResponseDTO getMessageResponseById(int id) {

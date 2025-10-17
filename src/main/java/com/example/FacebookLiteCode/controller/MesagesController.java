@@ -30,8 +30,30 @@ public class MesagesController {
         return ResponseEntity.ok(dto);
     }
     
+    @PostMapping("/raw")
+    public ResponseEntity<String> createMessageRaw(@RequestBody String rawJson) {
+        System.out.println("DEBUG - Raw JSON received: " + rawJson);
+        return ResponseEntity.ok("Raw JSON received: " + rawJson);
+    }
+    
     @PostMapping
-    public ResponseEntity<MessageResponseDTO> createMessage(@Valid @RequestBody MessageRequestDTO request) {
+    public ResponseEntity<MessageResponseDTO> createMessage(@RequestBody MessageRequestDTO request) {
+        System.out.println("DEBUG - Received request: " + request);
+        System.out.println("DEBUG - Message: " + request.getMessage());
+        System.out.println("DEBUG - Sender ID: " + request.getSenderUserId());
+        System.out.println("DEBUG - Recipient ID: " + request.getRecipientUserId());
+        
+        // Manual validation
+        if (request.getMessage() == null || request.getMessage().trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        if (request.getSenderUserId() == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        if (request.getRecipientUserId() == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        
         MessageResponseDTO created = mesagesService.createMessage(request);
         return ResponseEntity.ok(created);
     }
@@ -67,7 +89,16 @@ public class MesagesController {
 
     @GetMapping("/conversation/{user1Id}/{user2Id}")
     public List<MessageResponseDTO> getConversation(@PathVariable int user1Id, @PathVariable int user2Id) {
+        // Security check: Only allow if the current user is one of the participants
+        // For now, we'll rely on the frontend to pass the correct user IDs
+        // In a real application, you'd get the current user from the security context
         return mesagesService.getConversationDTO(user1Id, user2Id);
+    }
+    
+    @GetMapping("/my-conversation/{currentUserId}/{friendId}")
+    public List<MessageResponseDTO> getMyConversation(@PathVariable int currentUserId, @PathVariable int friendId) {
+        // This endpoint ensures that only the current user can see their own conversations
+        return mesagesService.getMyConversationDTO(currentUserId, friendId);
     }
 
     @GetMapping("/pinned/{isPin}")

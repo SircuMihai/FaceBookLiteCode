@@ -14,4 +14,6 @@ public class PostResponseDTO {
     private int userId;
     private String username;
     private String userProfilePicture;
+    private int likesCount;
+    // private java.util.List<CommentResponseDTO> comments; // Temporarily disabled
 }

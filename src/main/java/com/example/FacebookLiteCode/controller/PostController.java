@@ -1,6 +1,7 @@
 package com.example.FacebookLiteCode.controller;
 
 import com.example.FacebookLiteCode.services.PostService;
+import com.example.FacebookLiteCode.services.LikeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -9,6 +10,8 @@ import com.example.FacebookLiteCode.dto.PostResponseDTO;
 import jakarta.validation.Valid;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -17,6 +20,9 @@ public class PostController {
 
     @Autowired
     private PostService postService;
+    
+    @Autowired
+    private LikeService likeService;
 
     @GetMapping
     public List<PostResponseDTO> getAllPosts() {
@@ -64,5 +70,37 @@ public class PostController {
     @GetMapping("/search/date/{date}")
     public List<PostResponseDTO> searchPostsByDate(@PathVariable String date) {
         return postService.getPostsByDateDTO(date);
+    }
+    
+    @PostMapping("/{id}/toggle-like")
+    public ResponseEntity<Map<String, Object>> toggleLike(@PathVariable int id, @RequestParam int userId) {
+        try {
+            boolean isLiked = likeService.toggleLike(id, userId);
+            long likeCount = likeService.getLikeCount(id);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("isLiked", isLiked);
+            response.put("likeCount", likeCount);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    @GetMapping("/{id}/like-status")
+    public ResponseEntity<Map<String, Object>> getLikeStatus(@PathVariable int id, @RequestParam int userId) {
+        try {
+            boolean hasLiked = likeService.hasUserLiked(id, userId);
+            long likeCount = likeService.getLikeCount(id);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("hasLiked", hasLiked);
+            response.put("likeCount", likeCount);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 }

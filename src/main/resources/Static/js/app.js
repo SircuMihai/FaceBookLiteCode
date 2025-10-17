@@ -283,6 +283,13 @@ class FacebookLiteApp {
         const postsFeed = document.getElementById('posts-feed');
         if (!postsFeed) return;
 
+        // Handle case where posts might not be an array
+        if (!Array.isArray(posts)) {
+            console.error('Posts is not an array:', posts);
+            postsFeed.innerHTML = '<p class="text-center">Error loading posts. Please try again.</p>';
+            return;
+        }
+
         if (posts.length === 0) {
             postsFeed.innerHTML = '<p class="text-center">No posts yet. Create the first one!</p>';
             return;
@@ -295,16 +302,26 @@ class FacebookLiteApp {
                     <span class="post-date">${this.formatDate(post.createdAt)}</span>
                 </div>
                 <div class="post-content">${post.content}</div>
+                <div class="post-stats">
+                    <span class="likes-count">${post.likesCount || 0} likes</span>
+                </div>
                 <div class="post-actions">
-                    <button class="post-action" onclick="app.likePost(${post.postId})">
-                        <i class="fas fa-heart"></i> Like
+                    <button class="post-action like-btn" id="like-btn-${post.postId}" onclick="app.toggleLike(${post.postId})">
+                        <i class="fas fa-heart"></i> <span class="like-text">Like</span>
                     </button>
-                    <button class="post-action" onclick="app.commentPost(${post.postId})">
+                    <button class="post-action" onclick="app.showToast('Comments coming soon!', 'success')">
                         <i class="fas fa-comment"></i> Comment
                     </button>
                 </div>
             </div>
         `).join('');
+        
+        // Load like status for each post
+        if (this.currentUser) {
+            posts.forEach(post => {
+                this.loadLikeStatus(post.postId);
+            });
+        }
     }
 
     async handleCreatePost(e) {
@@ -811,7 +828,8 @@ class FacebookLiteApp {
     async loadConversationMessages(friendId) {
         try {
             console.log('Loading conversation messages between', this.currentUser.userId, 'and', friendId);
-            const response = await fetch(`${this.apiBaseUrl}/messages/conversation/${this.currentUser.userId}/${friendId}`);
+            // Use the secure endpoint that requires the current user ID
+            const response = await fetch(`${this.apiBaseUrl}/messages/my-conversation/${this.currentUser.userId}/${friendId}`);
             if (!response.ok) {
                 console.error('Failed to fetch messages:', response.status);
                 this.displayMessages([]);
@@ -837,8 +855,8 @@ class FacebookLiteApp {
 
         container.innerHTML = messages.map(message => `
             <div class="message ${message.senderId === this.currentUser.userId ? 'sent' : 'received'}">
-                <div class="message-bubble">${message.content}</div>
-                <div class="message-time">${this.formatDate(message.timestamp)}</div>
+                <div class="message-bubble">${message.message}</div>
+                <div class="message-time">${this.formatDate(message.data)}</div>
             </div>
         `).join('');
     }
@@ -860,23 +878,69 @@ class FacebookLiteApp {
             return;
         }
 
+        console.log('Debug - Current user:', this.currentUser);
+        console.log('Debug - Current conversation:', this.currentConversation);
+        console.log('Debug - Content:', content);
+        console.log('Debug - User ID:', this.currentUser?.userId);
+        console.log('Debug - Conversation ID:', this.currentConversation?.id);
+        console.log('Debug - User keys:', this.currentUser ? Object.keys(this.currentUser) : 'No user');
+        console.log('Debug - Conversation keys:', this.currentConversation ? Object.keys(this.currentConversation) : 'No conversation');
+        
+        // Validate required data
+        if (!this.currentUser || !this.currentUser.userId) {
+            this.showToast('User not logged in properly', 'error');
+            return;
+        }
+        
+        if (!this.currentConversation || !this.currentConversation.id) {
+            this.showToast('No conversation selected', 'error');
+            return;
+        }
+        
         console.log('Sending message:', {
-            senderId: this.currentUser.userId,
-            receiverId: this.currentConversation.id,
-            content: content
+            message: content,
+            senderUserId: this.currentUser.userId,
+            recipientUserId: this.currentConversation.id
         });
 
+        const requestBody = {
+            message: content,
+            senderUserId: this.currentUser.userId,
+            recipientUserId: this.currentConversation.id
+        };
+        
+        console.log('Request body being sent:', requestBody);
+        console.log('JSON stringified:', JSON.stringify(requestBody));
+        
+        // First test the raw endpoint
+        try {
+            console.log('Testing raw endpoint...');
+            const rawResponse = await fetch(`${this.apiBaseUrl}/messages/raw`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestBody)
+            });
+            
+            if (rawResponse.ok) {
+                const rawResult = await rawResponse.text();
+                console.log('Raw endpoint response:', rawResult);
+            } else {
+                console.error('Raw endpoint failed:', rawResponse.status);
+            }
+        } catch (rawError) {
+            console.error('Raw endpoint error:', rawError);
+        }
+        
+        // Now try the actual endpoint
         try {
             const response = await fetch(`${this.apiBaseUrl}/messages`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    senderId: this.currentUser.userId,
-                    receiverId: this.currentConversation.id,
-                    content: content
-                })
+                body: JSON.stringify(requestBody)
             });
 
             if (response.ok) {
@@ -929,13 +993,120 @@ class FacebookLiteApp {
         }
     }
 
-    // Post Actions (placeholder functions)
-    likePost(postId) {
-        this.showToast('Like functionality coming soon!', 'success');
+    // Post Actions
+    async toggleLike(postId) {
+        if (!this.currentUser) {
+            this.showToast('Please log in to like posts', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/posts/${postId}/toggle-like?userId=${this.currentUser.userId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                this.updateLikeButton(postId, result.isLiked, result.likeCount);
+                
+                if (result.isLiked) {
+                    this.showToast('Post liked!', 'success');
+                } else {
+                    this.showToast('Post unliked!', 'success');
+                }
+            } else {
+                this.showToast('Failed to toggle like', 'error');
+            }
+        } catch (error) {
+            console.error('Error toggling like:', error);
+            this.showToast('Error toggling like', 'error');
+        }
+    }
+    
+    updateLikeButton(postId, isLiked, likeCount) {
+        const likeBtn = document.getElementById(`like-btn-${postId}`);
+        const likeText = likeBtn.querySelector('.like-text');
+        const likeIcon = likeBtn.querySelector('i');
+        
+        if (isLiked) {
+            likeBtn.classList.add('liked');
+            likeText.textContent = 'Unlike';
+            likeIcon.style.color = '#e74c3c';
+        } else {
+            likeBtn.classList.remove('liked');
+            likeText.textContent = 'Like';
+            likeIcon.style.color = '';
+        }
+        
+        // Update like count display
+        const likeCountSpan = likeBtn.closest('.post-item').querySelector('.likes-count');
+        likeCountSpan.textContent = `${likeCount} likes`;
+    }
+    
+    async loadLikeStatus(postId) {
+        if (!this.currentUser) return;
+        
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/posts/${postId}/like-status?userId=${this.currentUser.userId}`);
+            if (response.ok) {
+                const result = await response.json();
+                this.updateLikeButton(postId, result.hasLiked, result.likeCount);
+            }
+        } catch (error) {
+            console.error('Error loading like status:', error);
+        }
     }
 
-    commentPost(postId) {
-        this.showToast('Comment functionality coming soon!', 'success');
+    toggleComments(postId) {
+        const commentsDiv = document.getElementById(`comments-${postId}`);
+        if (commentsDiv) {
+            commentsDiv.style.display = commentsDiv.style.display === 'none' ? 'block' : 'none';
+        }
+    }
+
+    async addComment(postId) {
+        if (!this.currentUser) {
+            this.showToast('Please log in to comment', 'error');
+            return;
+        }
+
+        const commentInput = document.getElementById(`comment-input-${postId}`);
+        const content = commentInput.value.trim();
+        
+        if (!content) {
+            this.showToast('Please enter a comment', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/comments`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    content: content,
+                    postId: postId,
+                    userId: this.currentUser.userId
+                })
+            });
+
+            if (response.ok) {
+                const newComment = await response.json();
+                this.showToast('Comment added!', 'success');
+                commentInput.value = '';
+                // Reload posts to show updated comments
+                await this.loadPosts();
+            } else {
+                this.showToast('Failed to add comment', 'error');
+            }
+        } catch (error) {
+            console.error('Error adding comment:', error);
+            this.showToast('Error adding comment', 'error');
+        }
     }
 }
 

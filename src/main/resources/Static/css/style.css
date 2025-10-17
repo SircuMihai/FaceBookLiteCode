@@ -455,6 +455,136 @@ body {
     }
 }
 
+/* Post Styles */
+.post-item {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+    transition: box-shadow 0.3s ease;
+}
+
+.post-item:hover {
+    box-shadow: var(--shadow-hover);
+}
+
+.post-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.post-author {
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.post-date {
+    color: var(--dark-gray);
+    font-size: 0.9em;
+}
+
+.post-content {
+    font-size: 1.1em;
+    line-height: 1.6;
+    margin-bottom: 15px;
+    color: var(--text-dark);
+}
+
+.post-stats {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 15px;
+    color: var(--dark-gray);
+    font-size: 0.9em;
+}
+
+.likes-count, .comments-count {
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.likes-count:hover, .comments-count:hover {
+    color: var(--primary-green);
+}
+
+.post-actions {
+    display: flex;
+    gap: 15px;
+    border-top: 1px solid var(--medium-gray);
+    padding-top: 15px;
+}
+
+.post-action {
+    background: none;
+    border: none;
+    color: var(--dark-gray);
+    cursor: pointer;
+    padding: 8px 15px;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+    font-size: 0.9em;
+}
+
+.post-action:hover {
+    background: var(--light-gray);
+    color: var(--primary-green);
+}
+
+.post-action.liked {
+    background: #ffe6e6;
+    color: #e74c3c;
+}
+
+.post-action.liked:hover {
+    background: #ffcccc;
+}
+
+.post-comments {
+    margin-top: 15px;
+    border-top: 1px solid var(--medium-gray);
+    padding-top: 15px;
+}
+
+.comments-list {
+    margin-bottom: 15px;
+}
+
+.comment-item {
+    background: var(--light-gray);
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-size: 0.9em;
+}
+
+.comment-form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.comment-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--medium-gray);
+    border-radius: 20px;
+    font-size: 0.9em;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+.comment-input:focus {
+    border-color: var(--primary-green);
+}
+
+.btn-small {
+    padding: 8px 15px;
+    font-size: 0.8em;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .nav-menu {

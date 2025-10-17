@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import jakarta.validation.constraints.*;
-import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -12,20 +12,21 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 public class MessageRequestDTO {
     @NotBlank(message = "Message is required")
     @Size(max = 2000, message = "Message must not exceed 2000 characters")
+    @JsonProperty("message")
     private String message;
     
     // Optional string date; consider switching to a proper date type later
-    @JsonAlias({"data"})
+    @JsonProperty("data")
     private String data;
 
     @NotNull(message = "Sender user ID is required")
-    @JsonAlias({"sender_user_id", "senderUserId", "user_id"})
+    @JsonProperty("senderUserId")
     private Integer senderUserId;
 
     @NotNull(message = "Recipient user ID is required")
-    @JsonAlias({"recipient_user_id", "recipientUserId", "resever_id"})
+    @JsonProperty("recipientUserId")
     private Integer recipientUserId;
     
-    @JsonAlias({"is_pin", "pin", "isPin"})
+    @JsonProperty("isPin")
     private boolean isPin;
 }

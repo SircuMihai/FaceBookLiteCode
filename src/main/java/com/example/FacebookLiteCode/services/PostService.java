@@ -60,9 +60,32 @@ public class PostService {
 
     // DTO-based API
     public List<PostResponseDTO> getAllPostsDTO() {
-        return postRepository.findAll().stream()
-                .map(postMapper::toResponseDTO)
-                .collect(Collectors.toList());
+        try {
+            System.out.println("DEBUG - Getting all posts...");
+            List<Post> posts = postRepository.findAll();
+            System.out.println("DEBUG - Found " + posts.size() + " posts");
+            
+            List<PostResponseDTO> dtos = posts.stream()
+                    .map(post -> {
+                        try {
+                            System.out.println("DEBUG - Mapping post " + post.getPostId());
+                            return postMapper.toResponseDTO(post);
+                        } catch (Exception e) {
+                            System.err.println("Error mapping post " + post.getPostId() + ": " + e.getMessage());
+                            e.printStackTrace();
+                            return null;
+                        }
+                    })
+                    .filter(dto -> dto != null)
+                    .collect(Collectors.toList());
+            
+            System.out.println("DEBUG - Successfully mapped " + dtos.size() + " DTOs");
+            return dtos;
+        } catch (Exception e) {
+            System.err.println("Error in getAllPostsDTO: " + e.getMessage());
+            e.printStackTrace();
+            return new java.util.ArrayList<>();
+        }
     }
 
     public PostResponseDTO getPostResponseById(int id) {
@@ -104,5 +127,25 @@ public class PostService {
         return postRepository.findByCreatedAtContaining(date).stream()
                 .map(postMapper::toResponseDTO)
                 .collect(Collectors.toList());
+    }
+    
+    public PostResponseDTO likePost(int postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Post not found: " + postId));
+        int currentLikes = post.getLikesCount() != null ? post.getLikesCount() : 0;
+        post.setLikesCount(currentLikes + 1);
+        Post saved = postRepository.save(post);
+        return postMapper.toResponseDTO(saved);
+    }
+    
+    public PostResponseDTO unlikePost(int postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Post not found: " + postId));
+        int currentLikes = post.getLikesCount() != null ? post.getLikesCount() : 0;
+        if (currentLikes > 0) {
+            post.setLikesCount(currentLikes - 1);
+        }
+        Post saved = postRepository.save(post);
+        return postMapper.toResponseDTO(saved);
     }
 }

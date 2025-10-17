@@ -23,6 +23,9 @@ public class Post {
     @Column(name = "created_at")
     private String createdAt;
     
+    @Column(name = "likes_count")
+    private Integer likesCount = 0;
+    
     // Relații
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
