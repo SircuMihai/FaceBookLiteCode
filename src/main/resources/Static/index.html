@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FacebookLite - Social Network</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-users"></i>
+                <span>FacebookLite</span>
+            </div>
+            <div class="nav-menu" id="nav-menu">
+                <div class="nav-links" id="nav-links">
+                    <!-- Links will be populated by JavaScript -->
+                </div>
+                <div class="nav-auth" id="nav-auth">
+                    <!-- Auth buttons will be populated by JavaScript -->
+                </div>
+            </div>
+            <div class="nav-toggle" id="nav-toggle">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Home Page -->
+        <section id="home-page" class="page active">
+            <div class="hero-section">
+                <div class="hero-content">
+                    <h1>Welcome to FacebookLite</h1>
+                    <p>Connect with friends, share moments, and stay updated with what matters most.</p>
+                    <div class="hero-buttons">
+                        <button class="btn btn-primary" onclick="showLogin()">Get Started</button>
+                        <button class="btn btn-secondary" onclick="showSignUp()">Sign Up</button>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    <i class="fas fa-users fa-10x"></i>
+                </div>
+            </div>
+        </section>
+
+        <!-- Login Page -->
+        <section id="login-page" class="page">
+            <div class="auth-container">
+                <div class="auth-card">
+                    <div class="auth-header">
+                        <h2>Welcome Back</h2>
+                        <p>Sign in to your account</p>
+                    </div>
+                    <form id="login-form" class="auth-form">
+                        <div class="form-group">
+                            <label for="login-username">Username</label>
+                            <input type="text" id="login-username" name="username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="login-password">Password</label>
+                            <input type="password" id="login-password" name="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-full">Sign In</button>
+                    </form>
+                    <div class="auth-footer">
+                        <p>Don't have an account? <a href="#" onclick="showSignUp()">Sign up</a></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sign Up Page -->
+        <section id="signup-page" class="page">
+            <div class="auth-container">
+                <div class="auth-card">
+                    <div class="auth-header">
+                        <h2>Create Account</h2>
+                        <p>Join FacebookLite today</p>
+                    </div>
+                    <form id="signup-form" class="auth-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="signup-firstname">First Name</label>
+                                <input type="text" id="signup-firstname" name="firstName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="signup-lastname">Last Name</label>
+                                <input type="text" id="signup-lastname" name="lastName" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="signup-username">Username</label>
+                            <input type="text" id="signup-username" name="username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="signup-email">Email</label>
+                            <input type="email" id="signup-email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="signup-password">Password</label>
+                            <input type="password" id="signup-password" name="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-full">Create Account</button>
+                    </form>
+                    <div class="auth-footer">
+                        <p>Already have an account? <a href="#" onclick="showLogin()">Sign in</a></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dashboard Page -->
+        <section id="dashboard-page" class="page">
+            <div class="dashboard-container">
+                <div class="dashboard-header">
+                    <h2>Welcome, <span id="user-name"></span>!</h2>
+                    <button class="btn btn-secondary" onclick="logout()">Logout</button>
+                </div>
+                <div class="dashboard-content">
+                    <div class="post-section">
+                        <div class="post-form">
+                            <h3>Create a Post</h3>
+                            <form id="post-form">
+                                <textarea id="post-content" placeholder="What's on your mind?" required></textarea>
+                                <button type="submit" class="btn btn-primary">Post</button>
+                            </form>
+                        </div>
+                        <div class="posts-feed" id="posts-feed">
+                            <!-- Posts will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Loading Spinner -->
+    <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
