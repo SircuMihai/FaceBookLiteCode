@@ -3,13 +3,57 @@ class FacebookLiteApp {
     constructor() {
         this.apiBaseUrl = 'http://localhost:8082/api';
         this.currentUser = null;
+        this.authToken = null;
         this.init();
     }
 
-    init() {
+    async init() {
         this.setupEventListeners();
-        this.checkAuthStatus();
+        await this.checkAuthStatus();
         this.showPage('home-page');
+    }
+
+    setAuthToken(token) {
+        this.authToken = token;
+    }
+
+    async authFetch(url, options = {}, requiresAuth = true) {
+        const headers = { ...(options.headers || {}) };
+
+        if (options.body && !headers['Content-Type']) {
+            headers['Content-Type'] = 'application/json';
+        }
+
+        if (requiresAuth) {
+            if (!this.authToken) {
+                throw new Error('Authentication required');
+            }
+            headers['Authorization'] = `Bearer ${this.authToken}`;
+        }
+
+        const response = await fetch(url, { ...options, headers });
+
+        if (response.status === 401 || response.status === 403) {
+            this.handleUnauthorized();
+            throw new Error('Unauthorized');
+        }
+
+        return response;
+    }
+
+    handleUnauthorized() {
+        this.logout(false);
+        this.showToast('Session expired. Please log in again.', 'error');
+    }
+
+    async fetchCurrentUserProfile(userId) {
+        const response = await this.authFetch(`${this.apiBaseUrl}/users/${userId}`);
+        if (!response.ok) {
+            throw new Error('Failed to load user profile');
+        }
+        const user = await response.json();
+        this.currentUser = user;
+        return user;
     }
 
     setupEventListeners() {
@@ -117,20 +161,36 @@ class FacebookLiteApp {
         };
 
         try {
-            // Get all users and find matching username
-            const response = await fetch(`${this.apiBaseUrl}/users`);
-            const users = await response.json();
-            
-            const user = users.find(u => u.username === loginData.username);
-            
-            if (user) {
-                this.currentUser = user;
-                localStorage.setItem('currentUser', JSON.stringify(user));
-                this.showToast('Login successful!', 'success');
-                this.showPage('dashboard-page');
-            } else {
-                this.showToast('Invalid username or password', 'error');
+            const response = await this.authFetch(`${this.apiBaseUrl}/auth/login`, {
+                method: 'POST',
+                body: JSON.stringify(loginData)
+            }, false);
+
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({}));
+                this.showToast(error.error || 'Invalid username or password', 'error');
+                return;
             }
+
+            const loginResult = await response.json();
+            this.setAuthToken(loginResult.token);
+
+            try {
+                await this.fetchCurrentUserProfile(loginResult.userId);
+            } catch (profileError) {
+                console.error('Failed to load full profile:', profileError);
+                this.currentUser = {
+                    userId: loginResult.userId,
+                    username: loginResult.username,
+                    email: loginResult.email,
+                    firstName: loginResult.firstName,
+                    lastName: loginResult.lastName,
+                    role: loginResult.role
+                };
+            }
+
+            this.showToast('Login successful!', 'success');
+            this.showPage('dashboard-page');
         } catch (error) {
             console.error('Login error:', error);
             this.showToast('Login failed. Please try again.', 'error');
@@ -149,26 +209,20 @@ class FacebookLiteApp {
             email: formData.get('email'),
             password: formData.get('password'),
             firstName: formData.get('firstName'),
-            lastName: formData.get('lastName'),
-            role: 'USER',
-            privateAccount: false
+            lastName: formData.get('lastName')
         };
 
         try {
-            const response = await fetch(`${this.apiBaseUrl}/users`, {
+            const response = await this.authFetch(`${this.apiBaseUrl}/auth/register`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify(userData)
-            });
+            }, false);
 
             if (response.ok) {
-                const newUser = await response.json();
-                this.currentUser = newUser;
-                localStorage.setItem('currentUser', JSON.stringify(newUser));
-                this.showToast('Account created successfully!', 'success');
-                this.showPage('dashboard-page');
+                const result = await response.json().catch(() => ({}));
+                this.showToast(result.message || 'Account created successfully! Please log in.', 'success');
+                e.target.reset();
+                this.showLogin();
             } else {
                 const error = await response.text();
                 this.showToast('Registration failed: ' + error, 'error');
@@ -181,17 +235,36 @@ class FacebookLiteApp {
         }
     }
 
-    logout() {
+    async logout(showMessage = true) {
+        if (this.authToken) {
+            try {
+                await this.authFetch(`${this.apiBaseUrl}/auth/logout`, {
+                method: 'POST'
+                });
+            } catch (err) {
+                console.warn('Failed to inform server about logout', err);
+            }
+        }
+
         this.currentUser = null;
-        localStorage.removeItem('currentUser');
-        this.showToast('Logged out successfully', 'success');
+        this.setAuthToken(null);
+        if (showMessage) {
+            this.showToast('Logged out successfully', 'success');
+        }
         this.showPage('home-page');
     }
 
-    checkAuthStatus() {
-        const savedUser = localStorage.getItem('currentUser');
-        if (savedUser) {
-            this.currentUser = JSON.parse(savedUser);
+    async checkAuthStatus() {
+        if (this.authToken && this.currentUser) {
+            try {
+                const response = await this.authFetch(`${this.apiBaseUrl}/auth/validate`);
+                const validation = await response.json();
+                if (!validation.valid) {
+                    this.handleUnauthorized();
+                }
+            } catch (error) {
+                console.error('Token validation failed:', error);
+            }
         }
     }
 
@@ -241,7 +314,10 @@ class FacebookLiteApp {
 
     async loadUserPosts() {
         try {
-            const response = await fetch(`${this.apiBaseUrl}/posts/user/${this.currentUser.userId}`);
+            const response = await this.authFetch(`${this.apiBaseUrl}/posts/user/${this.currentUser.userId}`);
+            if (!response.ok) {
+                throw new Error('Failed to load user posts');
+            }
             const posts = await response.json();
             this.displayUserPosts(posts);
         } catch (error) {
@@ -270,7 +346,10 @@ class FacebookLiteApp {
 
     async loadPosts() {
         try {
-            const response = await fetch(`${this.apiBaseUrl}/posts`);
+            const response = await this.authFetch(`${this.apiBaseUrl}/posts`);
+            if (!response.ok) {
+                throw new Error('Failed to load posts');
+            }
             const posts = await response.json();
             this.displayPosts(posts);
         } catch (error) {
@@ -356,11 +435,8 @@ class FacebookLiteApp {
         this.showLoading(true);
 
         try {
-            const response = await fetch(`${this.apiBaseUrl}/simple/create-post`, {
+            const response = await this.authFetch(`${this.apiBaseUrl}/simple/create-post`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify({
                     content: content,
                     userId: this.currentUser.userId
@@ -451,18 +527,14 @@ class FacebookLiteApp {
         };
 
         try {
-            const response = await fetch(`${this.apiBaseUrl}/users/${this.currentUser.userId}`, {
+            const response = await this.authFetch(`${this.apiBaseUrl}/users/${this.currentUser.userId}`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify(updateData)
             });
 
             if (response.ok) {
                 const updatedUser = await response.json();
                 this.currentUser = updatedUser;
-                localStorage.setItem('currentUser', JSON.stringify(updatedUser));
                 this.showToast('Profile updated successfully!', 'success');
                 this.closeEditProfile();
                 this.loadProfile(); // Reload profile page
@@ -499,8 +571,8 @@ class FacebookLiteApp {
         try {
             // Get all users and current friends
             const [usersResponse, friendsResponse] = await Promise.all([
-                fetch(`${this.apiBaseUrl}/users`),
-                fetch(`${this.apiBaseUrl}/friendships/friends/${this.currentUser.userId}`)
+                this.authFetch(`${this.apiBaseUrl}/users`),
+                this.authFetch(`${this.apiBaseUrl}/friendships/friends/${this.currentUser.userId}`)
             ]);
             
             if (!usersResponse.ok) {
@@ -572,8 +644,8 @@ class FacebookLiteApp {
         try {
             console.log('Testing search - fetching all users...');
             const [usersResponse, friendsResponse] = await Promise.all([
-                fetch(`${this.apiBaseUrl}/users`),
-                fetch(`${this.apiBaseUrl}/friendships/friends/${this.currentUser.userId}`)
+                this.authFetch(`${this.apiBaseUrl}/users`),
+                this.authFetch(`${this.apiBaseUrl}/friendships/friends/${this.currentUser.userId}`)
             ]);
             
             if (!usersResponse.ok) {
@@ -618,11 +690,8 @@ class FacebookLiteApp {
 
         try {
             console.log('Sending friend request from', this.currentUser.userId, 'to', userId);
-            const response = await fetch(`${this.apiBaseUrl}/friendships/friend-request`, {
+            const response = await this.authFetch(`${this.apiBaseUrl}/friendships/friend-request`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify({
                     user1Id: this.currentUser.userId,
                     user2Id: userId,
@@ -651,7 +720,7 @@ class FacebookLiteApp {
         if (!this.currentUser) return;
 
         try {
-            const response = await fetch(`${this.apiBaseUrl}/friendships/requests/${this.currentUser.userId}`);
+            const response = await this.authFetch(`${this.apiBaseUrl}/friendships/requests/${this.currentUser.userId}`);
             if (!response.ok) {
                 console.error('Failed to fetch friend requests:', response.status);
                 return;
@@ -741,7 +810,7 @@ class FacebookLiteApp {
         if (!this.currentUser) return;
 
         try {
-            const response = await fetch(`${this.apiBaseUrl}/friendships/friends/${this.currentUser.userId}`);
+            const response = await this.authFetch(`${this.apiBaseUrl}/friendships/friends/${this.currentUser.userId}`);
             const friends = await response.json();
             this.displayCurrentFriends(friends);
         } catch (error) {
@@ -789,7 +858,7 @@ class FacebookLiteApp {
     async loadConversations() {
         try {
             // Get friends as conversations
-            const response = await fetch(`${this.apiBaseUrl}/friendships/friends/${this.currentUser.userId}`);
+            const response = await this.authFetch(`${this.apiBaseUrl}/friendships/friends/${this.currentUser.userId}`);
             const friends = await response.json();
             this.displayConversations(friends);
         } catch (error) {
@@ -845,7 +914,7 @@ class FacebookLiteApp {
         try {
             console.log('Loading conversation messages between', this.currentUser.userId, 'and', friendId);
             // Use the secure endpoint that requires the current user ID
-            const response = await fetch(`${this.apiBaseUrl}/messages/my-conversation/${this.currentUser.userId}/${friendId}`);
+            const response = await this.authFetch(`${this.apiBaseUrl}/messages/my-conversation/${this.currentUser.userId}/${friendId}`);
             if (!response.ok) {
                 console.error('Failed to fetch messages:', response.status);
                 this.displayMessages([]);
@@ -931,11 +1000,8 @@ class FacebookLiteApp {
         // First test the raw endpoint
         try {
             console.log('Testing raw endpoint...');
-            const rawResponse = await fetch(`${this.apiBaseUrl}/messages/raw`, {
+            const rawResponse = await this.authFetch(`${this.apiBaseUrl}/messages/raw`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify(requestBody)
             });
             
@@ -951,11 +1017,8 @@ class FacebookLiteApp {
         
         // Now try the actual endpoint
         try {
-            const response = await fetch(`${this.apiBaseUrl}/messages`, {
+            const response = await this.authFetch(`${this.apiBaseUrl}/messages`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify(requestBody)
             });
 
@@ -990,7 +1053,7 @@ class FacebookLiteApp {
 
         try {
             console.log('Removing friend with friendship ID:', friendshipId);
-            const response = await fetch(`${this.apiBaseUrl}/friendships/${friendshipId}/remove`, {
+            const response = await this.authFetch(`${this.apiBaseUrl}/friendships/${friendshipId}/remove`, {
                 method: 'DELETE'
             });
 
@@ -1017,11 +1080,8 @@ class FacebookLiteApp {
         }
 
         try {
-            const response = await fetch(`${this.apiBaseUrl}/posts/${postId}/toggle-like?userId=${this.currentUser.userId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
+            const response = await this.authFetch(`${this.apiBaseUrl}/posts/${postId}/toggle-like?userId=${this.currentUser.userId}`, {
+                method: 'POST'
             });
 
             if (response.ok) {
@@ -1066,7 +1126,7 @@ class FacebookLiteApp {
         if (!this.currentUser) return;
         
         try {
-            const response = await fetch(`${this.apiBaseUrl}/posts/${postId}/like-status?userId=${this.currentUser.userId}`);
+            const response = await this.authFetch(`${this.apiBaseUrl}/posts/${postId}/like-status?userId=${this.currentUser.userId}`);
             if (response.ok) {
                 const result = await response.json();
                 this.updateLikeButton(postId, result.hasLiked, result.likeCount);
@@ -1129,11 +1189,8 @@ class FacebookLiteApp {
         }
 
         try {
-            const response = await fetch(`${this.apiBaseUrl}/comments`, {
+            const response = await this.authFetch(`${this.apiBaseUrl}/comments`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify({
                     content: content,
                     postId: postId,
@@ -1158,7 +1215,7 @@ class FacebookLiteApp {
     
     async loadComments(postId) {
         try {
-            const response = await fetch(`${this.apiBaseUrl}/comments/post/${postId}`);
+            const response = await this.authFetch(`${this.apiBaseUrl}/comments/post/${postId}`);
             if (response.ok) {
                 const comments = await response.json();
                 this.displayComments(postId, comments);
@@ -1187,7 +1244,7 @@ class FacebookLiteApp {
         }
 
         try {
-            const response = await fetch(`${this.apiBaseUrl}/comments/${commentId}`, {
+            const response = await this.authFetch(`${this.apiBaseUrl}/comments/${commentId}`, {
                 method: 'DELETE'
             });
 

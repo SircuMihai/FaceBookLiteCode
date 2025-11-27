@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JWT Token Test - FacebookLite</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border 0.3s;
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .success {
+            background: #10b981;
+        }
+        
+        .success:hover {
+            background: #059669;
+        }
+        
+        .danger {
+            background: #ef4444;
+        }
+        
+        .danger:hover {
+            background: #dc2626;
+        }
+        
+        .response {
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .token-display {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            word-break: break-all;
+        }
+        
+        .token-display strong {
+            color: #856404;
+        }
+        
+        .status-success {
+            color: #10b981;
+            font-weight: bold;
+        }
+        
+        .status-error {
+            color: #ef4444;
+            font-weight: bold;
+        }
+        
+        .info-box {
+            background: #e0e7ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        
+        .info-box strong {
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 JWT Token Test</h1>
+        <p class="subtitle">Demonstrație funcționalitate JWT Authentication</p>
+        
+        <!-- REGISTER SECTION -->
+        <div class="section">
+            <h2>1️⃣ Înregistrare User Nou</h2>
+            <input type="text" id="regUsername" placeholder="Username" value="Sircu">
+            <input type="email" id="regEmail" placeholder="Email" value="mihai@gmail.com">
+            <input type="password" id="regPassword" placeholder="Password" value="123456">
+            <input type="text" id="regFirstName" placeholder="Prenume" value="Mihai">
+            <input type="text" id="regLastName" placeholder="Nume" value="Sircu">
+            <button onclick="register()">📝 Register</button>
+            <div id="registerResponse" class="response" style="display:none;"></div>
+        </div>
+        
+        <!-- LOGIN SECTION -->
+        <div class="section">
+            <h2>2️⃣ Login User Existent</h2>
+            <input type="text" id="loginUsername" placeholder="Username" value="Sircu">
+            <input type="password" id="loginPassword" placeholder="Password" value="123456">
+            <button onclick="login()">🔑 Login</button>
+            <div id="loginResponse" class="response" style="display:none;"></div>
+        </div>
+        
+        <!-- TOKEN DISPLAY -->
+        <div class="section">
+            <h2>3️⃣ Token JWT Salvat</h2>
+            <div class="info-box">
+                <strong>ℹ️ Info:</strong> Token-ul este salvat automat după login/register și va fi folosit pentru request-urile protejate.
+            </div>
+            <div id="tokenDisplay" class="token-display" style="display:none;">
+                <strong>Token:</strong> <span id="tokenValue"></span>
+            </div>
+        </div>
+        
+        <!-- TEST WITHOUT TOKEN -->
+        <div class="section">
+            <h2>4️⃣ Test FĂRĂ Token (va eșua)</h2>
+            <div class="info-box">
+                <strong>⚠️ Demonstrație:</strong> Acest request va eșua cu 401 Unauthorized pentru a demonstra că endpoint-ul este protejat.
+            </div>
+            <button class="danger" onclick="testWithoutToken()">❌ GET /api/friendships (fără token)</button>
+            <div id="noTokenResponse" class="response" style="display:none;"></div>
+        </div>
+        
+        <!-- TEST WITH TOKEN -->
+        <div class="section">
+            <h2>5️⃣ Test CU Token (va funcționa)</h2>
+            <div class="info-box">
+                <strong>✅ Demonstrație:</strong> Acest request va funcționa pentru a demonstra că token-ul JWT este valid.
+            </div>
+            <button class="success" onclick="testWithToken()">✅ GET /api/friendships (cu token)</button>
+            <button class="success" onclick="testUsers()">✅ GET /api/users (cu token)</button>
+            <div id="withTokenResponse" class="response" style="display:none;"></div>
+        </div>
+        
+        <!-- VALIDATE TOKEN -->
+        <div class="section">
+            <h2>6️⃣ Validare Token</h2>
+            <button onclick="validateToken()">🔍 Validează Token</button>
+            <div id="validateResponse" class="response" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8082/api';
+        let jwtToken = null;
+
+        function showResponse(elementId, data, status) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            const statusClass = status >= 200 && status < 300 ? 'status-success' : 'status-error';
+            element.innerHTML = `<span class="${statusClass}">Status: ${status}</span>\n\n${JSON.stringify(data, null, 2)}`;
+        }
+
+        function saveToken(token) {
+            jwtToken = token;
+            document.getElementById('tokenDisplay').style.display = 'block';
+            document.getElementById('tokenValue').textContent = token;
+        }
+
+        async function register() {
+            const data = {
+                username: document.getElementById('regUsername').value,
+                email: document.getElementById('regEmail').value,
+                password: document.getElementById('regPassword').value,
+                firstName: document.getElementById('regFirstName').value,
+                lastName: document.getElementById('regLastName').value
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                showResponse('registerResponse', result, response.status);
+                
+                if (response.ok && result.token) {
+                    saveToken(result.token);
+                }
+            } catch (error) {
+                showResponse('registerResponse', { error: error.message }, 500);
+            }
+        }
+
+        async function login() {
+            const data = {
+                username: document.getElementById('loginUsername').value,
+                password: document.getElementById('loginPassword').value
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                showResponse('loginResponse', result, response.status);
+                
+                if (response.ok && result.token) {
+                    saveToken(result.token);
+                }
+            } catch (error) {
+                showResponse('loginResponse', { error: error.message }, 500);
+            }
+        }
+
+        async function testWithoutToken() {
+            try {
+                const response = await fetch(`${API_URL}/friendships`, {
+                    method: 'GET'
+                });
+                const result = await response.json();
+                showResponse('noTokenResponse', result, response.status);
+            } catch (error) {
+                showResponse('noTokenResponse', { error: error.message }, 500);
+            }
+        }
+
+        async function testWithToken() {
+            if (!jwtToken) {
+                alert('Te rog să te loghezi mai întâi pentru a obține un token!');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/friendships`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`
+                    }
+                });
+                const result = await response.json();
+                showResponse('withTokenResponse', result, response.status);
+            } catch (error) {
+                showResponse('withTokenResponse', { error: error.message }, 500);
+            }
+        }
+
+        async function testUsers() {
+            if (!jwtToken) {
+                alert('Te rog să te loghezi mai întâi pentru a obține un token!');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/users`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`
+                    }
+                });
+                const result = await response.json();
+                showResponse('withTokenResponse', result, response.status);
+            } catch (error) {
+                showResponse('withTokenResponse', { error: error.message }, 500);
+            }
+        }
+
+        async function validateToken() {
+            if (!jwtToken) {
+                alert('Te rog să te loghezi mai întâi pentru a obține un token!');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/auth/validate`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`
+                    }
+                });
+                const result = await response.json();
+                showResponse('validateResponse', result, response.status);
+            } catch (error) {
+                showResponse('validateResponse', { error: error.message }, 500);
+            }
+        }
+    </script>
+</body>
+</html>
