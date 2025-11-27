@@ -4,11 +4,15 @@ import com.example.FacebookLiteCode.services.FriendshipUserService;
 import com.example.FacebookLiteCode.dto.FriendshipRequestDTO;
 import com.example.FacebookLiteCode.dto.FriendshipResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/friendships")
@@ -104,23 +108,45 @@ public class FriendshipUserController {
     }
 
     @PutMapping("/{id}/accept")
-    public ResponseEntity<FriendshipResponseDTO> acceptFriendRequest(@PathVariable int id) {
+    public ResponseEntity<?> acceptFriendRequest(@PathVariable int id) {
         try {
-            return friendshipUserService.acceptFriendship(id)
-                    .map(ResponseEntity::ok)
-                    .orElse(ResponseEntity.notFound().build());
+            Optional<FriendshipResponseDTO> result = friendshipUserService.acceptFriendship(id);
+            if (result.isPresent()) {
+                return ResponseEntity.ok(result.get());
+            } else {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "Friend request not found or already processed");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            }
         } catch (IllegalArgumentException ex) {
-            return ResponseEntity.notFound().build();
+            Map<String, String> error = new HashMap<>();
+            error.put("error", ex.getMessage() != null ? ex.getMessage() : "Invalid friend request");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        } catch (Exception ex) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Failed to accept friend request: " + ex.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
 
     @DeleteMapping("/{id}/decline")
-    public ResponseEntity<Void> declineFriendRequest(@PathVariable int id) {
-        if (friendshipUserService.getFriendshipById(id).isPresent()) {
-            friendshipUserService.deleteFriendship(id);
-            return ResponseEntity.ok().build();
+    public ResponseEntity<?> declineFriendRequest(@PathVariable int id) {
+        try {
+            if (friendshipUserService.getFriendshipById(id).isPresent()) {
+                friendshipUserService.deleteFriendship(id);
+                Map<String, String> success = new HashMap<>();
+                success.put("message", "Friend request declined successfully");
+                return ResponseEntity.ok(success);
+            } else {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "Friend request not found");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            }
+        } catch (Exception ex) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Failed to decline friend request: " + ex.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
-        return ResponseEntity.notFound().build();
     }
 
     @DeleteMapping("/{id}/remove")

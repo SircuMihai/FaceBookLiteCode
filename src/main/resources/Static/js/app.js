@@ -10,6 +10,7 @@ class FacebookLiteApp {
     async init() {
         this.setupEventListeners();
         await this.checkAuthStatus();
+        // Show home page initially (it's already in the DOM)
         this.showPage('home-page');
     }
 
@@ -57,11 +58,16 @@ class FacebookLiteApp {
     }
 
     setupEventListeners() {
+        this.attachEventListeners();
+    }
+
+    attachEventListeners() {
         // Navigation toggle for mobile
         const navToggle = document.getElementById('nav-toggle');
         const navMenu = document.getElementById('nav-menu');
         
-        if (navToggle) {
+        if (navToggle && !navToggle.hasAttribute('data-listener-attached')) {
+            navToggle.setAttribute('data-listener-attached', 'true');
             navToggle.addEventListener('click', () => {
                 navMenu.classList.toggle('active');
             });
@@ -69,37 +75,48 @@ class FacebookLiteApp {
 
         // Login form
         const loginForm = document.getElementById('login-form');
-        if (loginForm) {
+        if (loginForm && !loginForm.hasAttribute('data-listener-attached')) {
+            loginForm.setAttribute('data-listener-attached', 'true');
             loginForm.addEventListener('submit', (e) => this.handleLogin(e));
         }
 
         // Sign up form
         const signupForm = document.getElementById('signup-form');
-        if (signupForm) {
+        if (signupForm && !signupForm.hasAttribute('data-listener-attached')) {
+            signupForm.setAttribute('data-listener-attached', 'true');
             signupForm.addEventListener('submit', (e) => this.handleSignUp(e));
         }
 
         // Post form
         const postForm = document.getElementById('post-form');
-        if (postForm) {
+        if (postForm && !postForm.hasAttribute('data-listener-attached')) {
+            postForm.setAttribute('data-listener-attached', 'true');
             postForm.addEventListener('submit', (e) => this.handleCreatePost(e));
         }
 
         // Edit profile form
         const editProfileForm = document.getElementById('edit-profile-form');
-        if (editProfileForm) {
+        if (editProfileForm && !editProfileForm.hasAttribute('data-listener-attached')) {
+            editProfileForm.setAttribute('data-listener-attached', 'true');
             editProfileForm.addEventListener('submit', (e) => this.handleEditProfile(e));
         }
 
         // Message form
         const messageForm = document.getElementById('message-form');
-        if (messageForm) {
+        if (messageForm && !messageForm.hasAttribute('data-listener-attached')) {
+            messageForm.setAttribute('data-listener-attached', 'true');
             messageForm.addEventListener('submit', (e) => this.handleSendMessage(e));
         }
     }
 
     // Navigation Functions
-    showPage(pageId) {
+    async showPage(pageId) {
+        // Check admin access
+        if (pageId === 'admin-dashboard-page' && (!this.currentUser || this.currentUser.role !== 'ADMIN')) {
+            this.showToast('Access denied. Admin privileges required.', 'error');
+            return;
+        }
+
         // Hide all pages
         const pages = document.querySelectorAll('.page');
         pages.forEach(page => page.classList.remove('active'));
@@ -108,20 +125,29 @@ class FacebookLiteApp {
         const targetPage = document.getElementById(pageId);
         if (targetPage) {
             targetPage.classList.add('active');
+        } else {
+            console.error(`Page element not found: ${pageId}`);
+            this.showToast(`Error: Could not load ${pageId}`, 'error');
+            return;
         }
 
         // Update navigation
         this.updateNavigation();
 
+        // Reattach event listeners (in case forms were recreated)
+        this.attachEventListeners();
+
         // Load page-specific content
         if (pageId === 'dashboard-page' && this.currentUser) {
-            this.loadDashboard();
+            await this.loadDashboard();
         } else if (pageId === 'profile-page' && this.currentUser) {
-            this.loadProfile();
+            await this.loadProfile();
         } else if (pageId === 'friends-page' && this.currentUser) {
-            this.loadFriends();
+            await this.loadFriends();
         } else if (pageId === 'messages-page' && this.currentUser) {
-            this.loadMessages();
+            await this.loadMessages();
+        } else if (pageId === 'admin-dashboard-page' && this.currentUser && this.currentUser.role === 'ADMIN') {
+            await this.loadAdminDashboard();
         }
     }
 
@@ -131,10 +157,17 @@ class FacebookLiteApp {
 
         if (this.currentUser) {
             // User is logged in
-            navLinks.innerHTML = `
+            let links = `
                 <a href="#" onclick="app.showPage('dashboard-page')">Dashboard</a>
                 <a href="#" onclick="app.showPage('dashboard-page')">Posts</a>
             `;
+            
+            // Add admin link if user is admin
+            if (this.currentUser.role === 'ADMIN') {
+                links += `<a href="#" onclick="app.showPage('admin-dashboard-page')">Admin</a>`;
+            }
+            
+            navLinks.innerHTML = links;
             navAuth.innerHTML = `
                 <span>Welcome, ${this.currentUser.username}</span>
                 <button class="btn btn-secondary" onclick="app.logout()">Logout</button>
@@ -160,15 +193,55 @@ class FacebookLiteApp {
             password: formData.get('password')
         };
 
+        // Client-side validation
+        if (!loginData.username || loginData.username.trim() === '') {
+            this.showToast('Please enter your username', 'error');
+            this.showLoading(false);
+            return;
+        }
+        
+        if (!loginData.password || loginData.password === '') {
+            this.showToast('Please enter your password', 'error');
+            this.showLoading(false);
+            return;
+        }
+
         try {
             const response = await this.authFetch(`${this.apiBaseUrl}/auth/login`, {
                 method: 'POST',
-                body: JSON.stringify(loginData)
+                body: JSON.stringify({
+                    username: loginData.username.trim(),
+                    password: loginData.password
+                })
             }, false);
 
             if (!response.ok) {
-                const error = await response.json().catch(() => ({}));
-                this.showToast(error.error || 'Invalid username or password', 'error');
+                // Try to parse JSON error response
+                let errorMessage = 'Invalid username or password. Please try again.';
+                try {
+                    const errorData = await response.json();
+                    // Handle different error response formats
+                    if (errorData.error) {
+                        errorMessage = errorData.error;
+                    } else if (errorData.message) {
+                        errorMessage = errorData.message;
+                    } else if (typeof errorData === 'string') {
+                        errorMessage = errorData;
+                    }
+                } catch (parseError) {
+                    // If JSON parsing fails, try text
+                    const errorText = await response.text().catch(() => '');
+                    if (errorText) {
+                        try {
+                            const parsed = JSON.parse(errorText);
+                            errorMessage = parsed.error || parsed.message || errorText;
+                        } catch {
+                            errorMessage = errorText || errorMessage;
+                        }
+                    }
+                }
+                this.showToast(errorMessage, 'error');
+                this.showLoading(false);
                 return;
             }
 
@@ -190,10 +263,23 @@ class FacebookLiteApp {
             }
 
             this.showToast('Login successful!', 'success');
-            this.showPage('dashboard-page');
+            // Update navigation first
+            this.updateNavigation();
+            // Then show dashboard
+            await this.showPage('dashboard-page');
         } catch (error) {
             console.error('Login error:', error);
-            this.showToast('Login failed. Please try again.', 'error');
+            let errorMessage = 'Login failed. Please try again.';
+            if (error.message) {
+                if (error.message.includes('Unauthorized') || error.message.includes('401')) {
+                    errorMessage = 'Invalid username or password. Please check your credentials.';
+                } else if (error.message.includes('Network') || error.message.includes('fetch')) {
+                    errorMessage = 'Network error. Please check your connection and try again.';
+                } else {
+                    errorMessage = 'Login failed: ' + error.message;
+                }
+            }
+            this.showToast(errorMessage, 'error');
         } finally {
             this.showLoading(false);
         }
@@ -212,10 +298,55 @@ class FacebookLiteApp {
             lastName: formData.get('lastName')
         };
 
+        // Client-side validation
+        if (!userData.username || userData.username.trim() === '') {
+            this.showToast('Please enter a username', 'error');
+            this.showLoading(false);
+            return;
+        }
+        
+        if (userData.username.trim().length < 3) {
+            this.showToast('Username must be at least 3 characters long', 'error');
+            this.showLoading(false);
+            return;
+        }
+        
+        if (!userData.email || userData.email.trim() === '') {
+            this.showToast('Please enter an email address', 'error');
+            this.showLoading(false);
+            return;
+        }
+        
+        // Basic email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(userData.email.trim())) {
+            this.showToast('Please enter a valid email address', 'error');
+            this.showLoading(false);
+            return;
+        }
+        
+        if (!userData.password || userData.password === '') {
+            this.showToast('Please enter a password', 'error');
+            this.showLoading(false);
+            return;
+        }
+        
+        if (userData.password.length < 6) {
+            this.showToast('Password must be at least 6 characters long', 'error');
+            this.showLoading(false);
+            return;
+        }
+
         try {
             const response = await this.authFetch(`${this.apiBaseUrl}/auth/register`, {
                 method: 'POST',
-                body: JSON.stringify(userData)
+                body: JSON.stringify({
+                    username: userData.username.trim(),
+                    email: userData.email.trim(),
+                    password: userData.password,
+                    firstName: userData.firstName ? userData.firstName.trim() : null,
+                    lastName: userData.lastName ? userData.lastName.trim() : null
+                })
             }, false);
 
             if (response.ok) {
@@ -224,12 +355,45 @@ class FacebookLiteApp {
                 e.target.reset();
                 this.showLogin();
             } else {
-                const error = await response.text();
-                this.showToast('Registration failed: ' + error, 'error');
+                // Try to parse JSON error response
+                let errorMessage = 'Registration failed. Please try again.';
+                try {
+                    const errorData = await response.json();
+                    // Handle different error response formats
+                    if (errorData.error) {
+                        errorMessage = errorData.error;
+                    } else if (errorData.message) {
+                        errorMessage = errorData.message;
+                    } else if (typeof errorData === 'string') {
+                        errorMessage = errorData;
+                    }
+                } catch (parseError) {
+                    // If JSON parsing fails, try text
+                    const errorText = await response.text().catch(() => '');
+                    if (errorText) {
+                        try {
+                            const parsed = JSON.parse(errorText);
+                            errorMessage = parsed.error || parsed.message || errorText;
+                        } catch {
+                            errorMessage = errorText || errorMessage;
+                        }
+                    }
+                }
+                this.showToast(errorMessage, 'error');
             }
         } catch (error) {
             console.error('Registration error:', error);
-            this.showToast('Registration failed. Please try again.', 'error');
+            let errorMessage = 'Registration failed. Please try again.';
+            if (error.message) {
+                if (error.message.includes('Network') || error.message.includes('fetch')) {
+                    errorMessage = 'Network error. Please check your connection and try again.';
+                } else if (error.message.includes('400') || error.message.includes('Bad Request')) {
+                    errorMessage = 'Invalid registration data. Please check all fields and try again.';
+                } else {
+                    errorMessage = 'Registration failed: ' + error.message;
+                }
+            }
+            this.showToast(errorMessage, 'error');
         } finally {
             this.showLoading(false);
         }
@@ -285,6 +449,21 @@ class FacebookLiteApp {
         const userNameElement = document.getElementById('user-name');
         if (userNameElement) {
             userNameElement.textContent = this.currentUser.username;
+        }
+
+        // Add admin button if user is admin
+        const dashboardActions = document.getElementById('dashboard-actions');
+        if (dashboardActions && this.currentUser.role === 'ADMIN') {
+            // Check if admin button already exists
+            const existingAdminBtn = dashboardActions.querySelector('[onclick*="admin-dashboard"]');
+            if (!existingAdminBtn) {
+                const adminBtn = document.createElement('button');
+                adminBtn.className = 'btn btn-primary';
+                adminBtn.style.background = '#e74c3c';
+                adminBtn.innerHTML = '<i class="fas fa-shield-alt"></i> Admin';
+                adminBtn.onclick = () => app.showPage('admin-dashboard-page');
+                dashboardActions.insertBefore(adminBtn, dashboardActions.lastElementChild);
+            }
         }
 
         // Load posts
@@ -745,7 +924,13 @@ class FacebookLiteApp {
         container.innerHTML = requests.map(request => {
             // Handle different possible response structures
             const user = request.user1 || request.user;
-            const friendshipId = request.friendshipId || request.id;
+            const friendshipId = request.friendshipId || request.id || request.frienshipId;
+            
+            if (!friendshipId) {
+                console.error('Friendship ID not found in request:', request);
+                return '';
+            }
+            
             const firstName = user ? (user.firstName || '') : '';
             const lastName = user ? (user.lastName || '') : '';
             const username = user ? (user.username || 'Unknown') : 'Unknown';
@@ -766,43 +951,96 @@ class FacebookLiteApp {
                     </div>
                 </div>
             `;
-        }).join('');
+        }).filter(html => html !== '').join('');
     }
 
     async acceptFriendRequest(friendshipId) {
+        if (!this.currentUser) {
+            this.showToast('Please log in to accept friend requests', 'error');
+            return;
+        }
+
+        if (!friendshipId || friendshipId === 0) {
+            this.showToast('Invalid friend request ID', 'error');
+            return;
+        }
+
+        console.log('Accepting friend request with ID:', friendshipId);
+
         try {
-            const response = await fetch(`${this.apiBaseUrl}/friendships/${friendshipId}/accept`, {
+            const response = await this.authFetch(`${this.apiBaseUrl}/friendships/${friendshipId}/accept`, {
                 method: 'PUT'
             });
 
             if (response.ok) {
                 this.showToast('Friend request accepted!', 'success');
-                this.loadFriendRequests();
-                this.loadCurrentFriends();
+                await this.loadFriendRequests();
+                await this.loadCurrentFriends();
             } else {
-                this.showToast('Failed to accept friend request', 'error');
+                // Try to get error message
+                let errorMessage = 'Failed to accept friend request';
+                try {
+                    const errorData = await response.json();
+                    if (errorData.error) {
+                        errorMessage = errorData.error;
+                    } else if (errorData.message) {
+                        errorMessage = errorData.message;
+                    }
+                } catch (e) {
+                    // Use default message
+                }
+                this.showToast(errorMessage, 'error');
             }
         } catch (error) {
             console.error('Error accepting friend request:', error);
-            this.showToast('Error accepting friend request', 'error');
+            let errorMessage = 'Error accepting friend request';
+            if (error.message && error.message.includes('Unauthorized')) {
+                errorMessage = 'You must be logged in to accept friend requests';
+            } else if (error.message) {
+                errorMessage = 'Error: ' + error.message;
+            }
+            this.showToast(errorMessage, 'error');
         }
     }
 
     async declineFriendRequest(friendshipId) {
+        if (!this.currentUser) {
+            this.showToast('Please log in to decline friend requests', 'error');
+            return;
+        }
+
         try {
-            const response = await fetch(`${this.apiBaseUrl}/friendships/${friendshipId}/decline`, {
+            const response = await this.authFetch(`${this.apiBaseUrl}/friendships/${friendshipId}/decline`, {
                 method: 'DELETE'
             });
 
             if (response.ok) {
                 this.showToast('Friend request declined', 'success');
-                this.loadFriendRequests();
+                await this.loadFriendRequests();
             } else {
-                this.showToast('Failed to decline friend request', 'error');
+                // Try to get error message
+                let errorMessage = 'Failed to decline friend request';
+                try {
+                    const errorData = await response.json();
+                    if (errorData.error) {
+                        errorMessage = errorData.error;
+                    } else if (errorData.message) {
+                        errorMessage = errorData.message;
+                    }
+                } catch (e) {
+                    // Use default message
+                }
+                this.showToast(errorMessage, 'error');
             }
         } catch (error) {
             console.error('Error declining friend request:', error);
-            this.showToast('Error declining friend request', 'error');
+            let errorMessage = 'Error declining friend request';
+            if (error.message && error.message.includes('Unauthorized')) {
+                errorMessage = 'You must be logged in to decline friend requests';
+            } else if (error.message) {
+                errorMessage = 'Error: ' + error.message;
+            }
+            this.showToast(errorMessage, 'error');
         }
     }
 
@@ -1261,6 +1499,198 @@ class FacebookLiteApp {
         } catch (error) {
             console.error('Error deleting comment:', error);
             this.showToast('Error deleting comment', 'error');
+        }
+    }
+
+    // Admin Dashboard Functions
+    async loadAdminDashboard() {
+        if (!this.currentUser || this.currentUser.role !== 'ADMIN') {
+            this.showToast('Access denied. Admin privileges required.', 'error');
+            return;
+        }
+
+        try {
+            // Load statistics
+            await Promise.all([
+                this.loadAdminStats(),
+                this.loadAllUsers(),
+                this.loadAllPosts()
+            ]);
+            
+            // Update last updated time
+            const lastUpdated = document.getElementById('last-updated');
+            if (lastUpdated) {
+                lastUpdated.textContent = new Date().toLocaleString();
+            }
+        } catch (error) {
+            console.error('Error loading admin dashboard:', error);
+            this.showToast('Error loading admin dashboard', 'error');
+        }
+    }
+
+    async loadAdminStats() {
+        try {
+            const response = await this.authFetch(`${this.apiBaseUrl}/admin/stats`);
+            if (!response.ok) {
+                throw new Error('Failed to load statistics');
+            }
+            const stats = await response.json();
+            
+            document.getElementById('total-users').textContent = stats.totalUsers || 0;
+            document.getElementById('total-posts').textContent = stats.totalPosts || 0;
+            document.getElementById('total-comments').textContent = stats.totalComments || 0;
+            document.getElementById('total-likes').textContent = stats.totalLikes || 0;
+        } catch (error) {
+            console.error('Error loading admin stats:', error);
+        }
+    }
+
+    async loadAllUsers() {
+        try {
+            const response = await this.authFetch(`${this.apiBaseUrl}/admin/users`);
+            if (!response.ok) {
+                throw new Error('Failed to load users');
+            }
+            const users = await response.json();
+            this.displayUsers(users);
+        } catch (error) {
+            console.error('Error loading users:', error);
+            this.showToast('Error loading users', 'error');
+        }
+    }
+
+    displayUsers(users) {
+        const container = document.getElementById('users-list');
+        if (!container) return;
+
+        if (users.length === 0) {
+            container.innerHTML = '<p>No users found.</p>';
+            return;
+        }
+
+        container.innerHTML = users.map(user => `
+            <div class="user-card">
+                <div class="user-info">
+                    <h4>${user.firstName || ''} ${user.lastName || ''}</h4>
+                    <p>@${user.username}</p>
+                    <p>${user.email}</p>
+                    <p>Role: ${user.role || 'USER'}</p>
+                </div>
+                <div class="user-actions">
+                    <button class="btn btn-secondary btn-small" onclick="app.deleteUserAsAdmin(${user.userId})">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async searchUsers() {
+        const searchTerm = document.getElementById('user-search')?.value.trim();
+        if (!searchTerm) {
+            await this.loadAllUsers();
+            return;
+        }
+
+        try {
+            const response = await this.authFetch(`${this.apiBaseUrl}/admin/users/search?term=${encodeURIComponent(searchTerm)}`);
+            if (!response.ok) {
+                throw new Error('Failed to search users');
+            }
+            const users = await response.json();
+            this.displayUsers(users);
+        } catch (error) {
+            console.error('Error searching users:', error);
+            this.showToast('Error searching users', 'error');
+        }
+    }
+
+    async deleteUserAsAdmin(userId) {
+        if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+            return;
+        }
+
+        try {
+            const response = await this.authFetch(`${this.apiBaseUrl}/admin/users/${userId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                this.showToast('User deleted successfully', 'success');
+                await this.loadAllUsers();
+                await this.loadAdminStats();
+            } else {
+                this.showToast('Failed to delete user', 'error');
+            }
+        } catch (error) {
+            console.error('Error deleting user:', error);
+            this.showToast('Error deleting user', 'error');
+        }
+    }
+
+    async loadAllPosts() {
+        try {
+            const response = await this.authFetch(`${this.apiBaseUrl}/admin/posts`);
+            if (!response.ok) {
+                throw new Error('Failed to load posts');
+            }
+            const posts = await response.json();
+            this.displayAdminPosts(posts);
+        } catch (error) {
+            console.error('Error loading posts:', error);
+            this.showToast('Error loading posts', 'error');
+        }
+    }
+
+    displayAdminPosts(posts) {
+        const container = document.getElementById('admin-posts-list');
+        if (!container) return;
+
+        if (posts.length === 0) {
+            container.innerHTML = '<p>No posts found.</p>';
+            return;
+        }
+
+        container.innerHTML = posts.map(post => `
+            <div class="post-item">
+                <div class="post-header">
+                    <span class="post-author">${post.username || 'Unknown User'}</span>
+                    <span class="post-date">${this.formatDate(post.createdAt)}</span>
+                </div>
+                <div class="post-content">${post.content}</div>
+                <div class="post-stats">
+                    <span>${post.likesCount || 0} likes</span>
+                    <span>${post.comments ? post.comments.length : 0} comments</span>
+                </div>
+                <div class="post-actions">
+                    <button class="btn btn-secondary btn-small" onclick="app.deletePostAsAdmin(${post.postId})">
+                        Delete Post
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async deletePostAsAdmin(postId) {
+        if (!confirm('Are you sure you want to delete this post?')) {
+            return;
+        }
+
+        try {
+            const response = await this.authFetch(`${this.apiBaseUrl}/admin/posts/${postId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                this.showToast('Post deleted successfully', 'success');
+                await this.loadAllPosts();
+                await this.loadAdminStats();
+            } else {
+                this.showToast('Failed to delete post', 'error');
+            }
+        } catch (error) {
+            console.error('Error deleting post:', error);
+            this.showToast('Error deleting post', 'error');
         }
     }
 

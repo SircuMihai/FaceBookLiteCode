@@ -195,6 +195,16 @@ public class FriendshipUserService {
         Optional<FriendshipUser> friendshipOpt = friendshipUserRepository.findById(friendshipId);
         if (friendshipOpt.isPresent()) {
             FriendshipUser friendship = friendshipOpt.get();
+            
+            // Check if friendship is in pending status
+            if (!"pending".equalsIgnoreCase(friendship.getStatus())) {
+                if ("accepted".equalsIgnoreCase(friendship.getStatus())) {
+                    throw new IllegalArgumentException("Friend request has already been accepted");
+                } else {
+                    throw new IllegalArgumentException("Friend request cannot be accepted. Current status: " + friendship.getStatus());
+                }
+            }
+            
             friendship.setStatus("accepted");
             FriendshipUser saved = friendshipUserRepository.save(friendship);
             return Optional.of(toResponseDTO(saved));
