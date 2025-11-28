@@ -85,20 +85,12 @@ public class AuthController {
             // Renew session: revoke all previous tokens for this user before issuing a new one
             jwtTokenStore.revokeTokensByUsername(user.getUsername());
 
-            // Generate access token (1 hour expiration)
-            String accessToken = jwtUtil.generateAccessToken(userDetails.getUsername());
-            jwtTokenStore.storeToken(accessToken, user.getUserId(), user.getUsername(), "access");
-
-            // Generate refresh token (5 hours expiration)
-            String refreshToken = jwtUtil.generateRefreshToken(userDetails.getUsername());
-            jwtTokenStore.storeToken(refreshToken, user.getUserId(), user.getUsername(), "refresh");
-            
-            // Link refresh token to access token
-            jwtTokenStore.linkRefreshToAccess(refreshToken, accessToken);
+            // Generate token (1 hour expiration)
+            String token = jwtUtil.generateToken(userDetails);
+            jwtTokenStore.storeToken(token, user.getUserId(), user.getUsername());
 
             LoginResponseDTO response = new LoginResponseDTO(
-                    accessToken,
-                    refreshToken,
+                    token,
                     user.getUserId(),
                     user.getUsername(),
                     user.getEmail(),
@@ -272,37 +264,23 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> request) {
+    public ResponseEntity<?> refreshToken(@RequestHeader(value = "Authorization", required = false) String authHeader) {
         try {
-            String refreshToken = request.get("refreshToken");
-            
-            if (refreshToken == null || refreshToken.isEmpty()) {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 Map<String, String> error = new HashMap<>();
-                error.put("error", "Refresh token is required");
+                error.put("error", "Authorization header with Bearer token is required");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
             }
 
-            // Validate refresh token
-            if (!jwtUtil.isRefreshToken(refreshToken)) {
-                Map<String, String> error = new HashMap<>();
-                error.put("error", "Invalid refresh token");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
-            }
-
-            // Extract username from refresh token
-            String username = jwtUtil.extractUsername(refreshToken);
+            String token = authHeader.substring(7);
             
-            // Check if refresh token is active in store
-            if (!jwtTokenStore.isTokenActive(refreshToken, username)) {
+            // Extract username from token
+            String username = jwtUtil.extractUsername(token);
+            
+            // Check if token is active in store
+            if (!jwtTokenStore.isTokenActive(token, username)) {
                 Map<String, String> error = new HashMap<>();
-                error.put("error", "Refresh token is not active or has been revoked");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
-            }
-
-            // Validate token expiration
-            if (!jwtUtil.validateToken(refreshToken, username)) {
-                Map<String, String> error = new HashMap<>();
-                error.put("error", "Refresh token has expired");
+                error.put("error", "Token is not active or has been revoked");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
             }
 
@@ -310,16 +288,15 @@ public class AuthController {
             Users user = usersRepository.findByUsername(username)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            // Generate new access token
-            String newAccessToken = jwtUtil.generateAccessToken(username);
-            jwtTokenStore.storeToken(newAccessToken, user.getUserId(), username, "access");
-            
-            // Link the refresh token to the new access token
-            jwtTokenStore.linkRefreshToAccess(refreshToken, newAccessToken);
+            // Revoke old token
+            jwtTokenStore.revokeToken(token);
+
+            // Generate new token (refreshed with new expiration)
+            String newToken = jwtUtil.generateToken(username);
+            jwtTokenStore.storeToken(newToken, user.getUserId(), username);
 
             Map<String, Object> response = new HashMap<>();
-            response.put("token", newAccessToken);
-            response.put("refreshToken", refreshToken); // Return same refresh token
+            response.put("token", newToken);
             response.put("type", "Bearer");
             response.put("userId", user.getUserId());
             response.put("username", username);

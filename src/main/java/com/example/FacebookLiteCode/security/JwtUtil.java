@@ -20,11 +20,8 @@ public class JwtUtil {
     @Value("${jwt.secret:mySecretKeyForJWTTokenGenerationThatIsAtLeast256BitsLongForHS256Algorithm}")
     private String SECRET_KEY;
 
-    @Value("${jwt.expiration:3600000}") // 1 hour in milliseconds (access token)
-    private Long ACCESS_TOKEN_EXPIRATION;
-
-    @Value("${jwt.refresh.expiration:18000000}") // 5 hours in milliseconds (refresh token)
-    private Long REFRESH_TOKEN_EXPIRATION;
+    @Value("${jwt.expiration:3600000}") // 1 hour in milliseconds
+    private Long JWT_EXPIRATION;
 
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
@@ -57,68 +54,22 @@ public class JwtUtil {
 
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
-        return createAccessToken(claims, userDetails.getUsername());
+        return createToken(claims, userDetails.getUsername());
     }
 
     public String generateToken(String username) {
         Map<String, Object> claims = new HashMap<>();
-        return createAccessToken(claims, username);
+        return createToken(claims, username);
     }
 
-    public String generateAccessToken(String username) {
-        Map<String, Object> claims = new HashMap<>();
-        return createAccessToken(claims, username);
-    }
-
-    public String generateRefreshToken(String username) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("type", "refresh");
-        return createRefreshToken(claims, username);
-    }
-
-    private String createAccessToken(Map<String, Object> claims, String subject) {
+    private String createToken(Map<String, Object> claims, String subject) {
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(subject)
-                .claim("type", "access")
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_EXPIRATION))
+                .setExpiration(new Date(System.currentTimeMillis() + JWT_EXPIRATION))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
-    }
-
-    private String createRefreshToken(Map<String, Object> claims, String subject) {
-        return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(subject)
-                .claim("type", "refresh")
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + REFRESH_TOKEN_EXPIRATION))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
-                .compact();
-    }
-
-    public String getTokenType(String token) {
-        Claims claims = extractAllClaims(token);
-        return claims.get("type", String.class);
-    }
-
-    public boolean isRefreshToken(String token) {
-        try {
-            String type = getTokenType(token);
-            return "refresh".equals(type);
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    public boolean isAccessToken(String token) {
-        try {
-            String type = getTokenType(token);
-            return "access".equals(type);
-        } catch (Exception e) {
-            return false;
-        }
     }
 
     public Boolean validateToken(String token, UserDetails userDetails) {
