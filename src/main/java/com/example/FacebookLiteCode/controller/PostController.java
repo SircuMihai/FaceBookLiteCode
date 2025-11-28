@@ -2,8 +2,12 @@ package com.example.FacebookLiteCode.controller;
 
 import com.example.FacebookLiteCode.services.PostService;
 import com.example.FacebookLiteCode.services.LikeService;
+import com.example.FacebookLiteCode.repository.UsersRepository;
+import com.example.FacebookLiteCode.model.Users;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import com.example.FacebookLiteCode.dto.PostRequestDTO;
 import com.example.FacebookLiteCode.dto.PostResponseDTO;
@@ -23,6 +27,9 @@ public class PostController {
     
     @Autowired
     private LikeService likeService;
+    
+    @Autowired
+    private UsersRepository usersRepository;
 
     @GetMapping
     public List<PostResponseDTO> getAllPosts() {
@@ -48,13 +55,47 @@ public class PostController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /**
+     * Delete a post - Users can only delete their own posts
+     * Admins can delete any post via /api/admin/posts/{id}
+     */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePost(@PathVariable int id) {
-        if (postService.getPostById(id).isPresent()) {
-            postService.deletePost(id);
-            return ResponseEntity.ok().build();
+    public ResponseEntity<Map<String, String>> deletePost(@PathVariable int id) {
+        // Get current authenticated user
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401).build();
         }
-        return ResponseEntity.notFound().build();
+        
+        String username = authentication.getName();
+        Users currentUser = usersRepository.findByUsername(username)
+                .orElse(null);
+        
+        if (currentUser == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        // Check if post exists
+        PostResponseDTO post = postService.getPostResponseById(id);
+        if (post == null) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        // Check if user is the owner of the post OR is an admin
+        boolean isOwner = post.getUserId() == currentUser.getUserId();
+        boolean isAdmin = "ADMIN".equals(currentUser.getRole());
+        
+        if (!isOwner && !isAdmin) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "You can only delete your own posts");
+            return ResponseEntity.status(403).body(error);
+        }
+        
+        // Delete the post
+        postService.deletePost(id);
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Post deleted successfully");
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/user/{userId}")

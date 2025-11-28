@@ -3,6 +3,7 @@ package com.example.FacebookLiteCode.controller;
 import com.example.FacebookLiteCode.services.UsersService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import com.example.FacebookLiteCode.dto.UserRequestDTO;
 import com.example.FacebookLiteCode.dto.UpdateUserRequestDTO;
@@ -43,14 +44,22 @@ public class UsersController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable int id) {
-        if (usersService.getUserById(id).isPresent()) {
-            usersService.deleteUser(id);
-            return ResponseEntity.ok().build();
-        }
-        return ResponseEntity.notFound().build();
-    }
+    /**
+     * Delete user endpoint - REMOVED for security
+     * User deletion should only be done through /api/admin/users/{userId}
+     * which requires ADMIN role.
+     * 
+     * If you need user self-deletion, implement it separately with proper checks.
+     */
+    // @DeleteMapping("/{id}")
+    // @PreAuthorize("hasRole('ADMIN')") // This endpoint is disabled - use /api/admin/users/{id} instead
+    // public ResponseEntity<Void> deleteUser(@PathVariable int id) {
+    //     if (usersService.getUserById(id).isPresent()) {
+    //         usersService.deleteUser(id);
+    //         return ResponseEntity.ok().build();
+    //     }
+    //     return ResponseEntity.notFound().build();
+    // }
 
     @GetMapping("/username/{username}")
     public ResponseEntity<UserResponseDTO> getUserByUsername(@PathVariable String username) {
