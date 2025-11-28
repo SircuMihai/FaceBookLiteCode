@@ -1,0 +1,29 @@
+<!-- Dashboard Page -->
+<section id="dashboard-page" class="page">
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <h2>Welcome, <span id="user-name"></span>!</h2>
+            <div class="dashboard-actions" id="dashboard-actions">
+                <button class="btn btn-primary" onclick="app.showPage('profile-page')">Profile</button>
+                <button class="btn btn-primary" onclick="app.showPage('friends-page')">Friends</button>
+                <button class="btn btn-primary" onclick="app.showPage('messages-page')">Messages</button>
+                <button class="btn btn-secondary" onclick="app.logout()">Logout</button>
+            </div>
+        </div>
+        <div class="dashboard-content">
+            <div class="post-section">
+                <div class="post-form">
+                    <h3>Create a Post</h3>
+                    <form id="post-form">
+                        <textarea id="post-content" placeholder="What's on your mind?" required></textarea>
+                        <button type="submit" class="btn btn-primary">Post</button>
+                    </form>
+                </div>
+                <div class="posts-feed" id="posts-feed">
+                    <!-- Posts will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+

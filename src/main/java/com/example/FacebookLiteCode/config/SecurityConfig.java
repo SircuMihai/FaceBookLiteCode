@@ -24,6 +24,7 @@ public class SecurityConfig {
     public static final String[] PUBLIC_ENDPOINTS = {
             "/api/auth/**",
             "/api/users",
+            "/api/setup/**",  // Setup endpoint for initial admin creation (remove in production)
             "/",
             "/index.html",
             "/css/**",

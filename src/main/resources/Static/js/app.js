@@ -117,37 +117,65 @@ class FacebookLiteApp {
             return;
         }
 
-        // Hide all pages
-        const pages = document.querySelectorAll('.page');
-        pages.forEach(page => page.classList.remove('active'));
+        // Check if loadScreen function exists (defined in index.html)
+        if (typeof window.loadScreen === 'function') {
+            // Use dynamic screen loading
+            try {
+                await window.loadScreen(pageId);
+                
+                // Update navigation
+                this.updateNavigation();
 
-        // Show selected page
-        const targetPage = document.getElementById(pageId);
-        if (targetPage) {
-            targetPage.classList.add('active');
+                // Reattach event listeners (forms are recreated when screen loads)
+                this.attachEventListeners();
+
+                // Load page-specific content
+                if (pageId === 'dashboard-page' && this.currentUser) {
+                    await this.loadDashboard();
+                } else if (pageId === 'profile-page' && this.currentUser) {
+                    await this.loadProfile();
+                } else if (pageId === 'friends-page' && this.currentUser) {
+                    await this.loadFriends();
+                } else if (pageId === 'messages-page' && this.currentUser) {
+                    await this.loadMessages();
+                } else if (pageId === 'admin-dashboard-page' && this.currentUser && this.currentUser.role === 'ADMIN') {
+                    await this.loadAdminDashboard();
+                }
+            } catch (error) {
+                console.error('Error loading screen:', error);
+                this.showToast('Error loading page', 'error');
+            }
         } else {
-            console.error(`Page element not found: ${pageId}`);
-            this.showToast(`Error: Could not load ${pageId}`, 'error');
-            return;
-        }
+            // Fallback: Use static pages (if loadScreen not available)
+            const pages = document.querySelectorAll('.page');
+            pages.forEach(page => page.classList.remove('active'));
 
-        // Update navigation
-        this.updateNavigation();
+            const targetPage = document.getElementById(pageId);
+            if (targetPage) {
+                targetPage.classList.add('active');
+                
+                // Update navigation
+                this.updateNavigation();
 
-        // Reattach event listeners (in case forms were recreated)
-        this.attachEventListeners();
+                // Reattach event listeners
+                this.attachEventListeners();
 
-        // Load page-specific content
-        if (pageId === 'dashboard-page' && this.currentUser) {
-            await this.loadDashboard();
-        } else if (pageId === 'profile-page' && this.currentUser) {
-            await this.loadProfile();
-        } else if (pageId === 'friends-page' && this.currentUser) {
-            await this.loadFriends();
-        } else if (pageId === 'messages-page' && this.currentUser) {
-            await this.loadMessages();
-        } else if (pageId === 'admin-dashboard-page' && this.currentUser && this.currentUser.role === 'ADMIN') {
-            await this.loadAdminDashboard();
+                // Load page-specific content
+                if (pageId === 'dashboard-page' && this.currentUser) {
+                    await this.loadDashboard();
+                } else if (pageId === 'profile-page' && this.currentUser) {
+                    await this.loadProfile();
+                } else if (pageId === 'friends-page' && this.currentUser) {
+                    await this.loadFriends();
+                } else if (pageId === 'messages-page' && this.currentUser) {
+                    await this.loadMessages();
+                } else if (pageId === 'admin-dashboard-page' && this.currentUser && this.currentUser.role === 'ADMIN') {
+                    await this.loadAdminDashboard();
+                }
+            } else {
+                console.error(`Page element not found: ${pageId}`);
+                this.showToast(`Error: Could not load ${pageId}`, 'error');
+            }
         }
     }
 
@@ -167,18 +195,27 @@ class FacebookLiteApp {
                 links += `<a href="#" onclick="app.showPage('admin-dashboard-page')">Admin</a>`;
             }
             
-            navLinks.innerHTML = links;
-            navAuth.innerHTML = `
-                <span>Welcome, ${this.currentUser.username}</span>
-                <button class="btn btn-secondary" onclick="app.logout()">Logout</button>
-            `;
+            // Clear and set navigation to prevent duplicates
+            if (navLinks) {
+                navLinks.innerHTML = links;
+            }
+            if (navAuth) {
+                navAuth.innerHTML = `
+                    <span>Welcome, ${this.currentUser.username}</span>
+                    <button class="btn btn-secondary" onclick="app.logout()">Logout</button>
+                `;
+            }
         } else {
             // User is not logged in
-            navLinks.innerHTML = '';
-            navAuth.innerHTML = `
-                <button class="btn btn-primary" onclick="app.showLogin()">Login</button>
-                <button class="btn btn-secondary" onclick="app.showSignUp()">Sign Up</button>
-            `;
+            if (navLinks) {
+                navLinks.innerHTML = '';
+            }
+            if (navAuth) {
+                navAuth.innerHTML = `
+                    <button class="btn btn-primary" onclick="app.showLogin()">Login</button>
+                    <button class="btn btn-secondary" onclick="app.showSignUp()">Sign Up</button>
+                `;
+            }
         }
     }
 
@@ -250,6 +287,11 @@ class FacebookLiteApp {
 
             try {
                 await this.fetchCurrentUserProfile(loginResult.userId);
+                // Ensure role is set from login response if profile fetch didn't include it
+                if (!this.currentUser.role && loginResult.role) {
+                    this.currentUser.role = loginResult.role;
+                }
+                console.log('User profile loaded:', this.currentUser);
             } catch (profileError) {
                 console.error('Failed to load full profile:', profileError);
                 this.currentUser = {
@@ -260,6 +302,7 @@ class FacebookLiteApp {
                     lastName: loginResult.lastName,
                     role: loginResult.role
                 };
+                console.log('Using login response for user:', this.currentUser);
             }
 
             this.showToast('Login successful!', 'success');
@@ -453,17 +496,23 @@ class FacebookLiteApp {
 
         // Add admin button if user is admin
         const dashboardActions = document.getElementById('dashboard-actions');
-        if (dashboardActions && this.currentUser.role === 'ADMIN') {
-            // Check if admin button already exists
-            const existingAdminBtn = dashboardActions.querySelector('[onclick*="admin-dashboard"]');
-            if (!existingAdminBtn) {
-                const adminBtn = document.createElement('button');
-                adminBtn.className = 'btn btn-primary';
-                adminBtn.style.background = '#e74c3c';
-                adminBtn.innerHTML = '<i class="fas fa-shield-alt"></i> Admin';
-                adminBtn.onclick = () => app.showPage('admin-dashboard-page');
-                dashboardActions.insertBefore(adminBtn, dashboardActions.lastElementChild);
-            }
+        
+        if (dashboardActions && this.currentUser && this.currentUser.role === 'ADMIN') {
+            // Remove any existing admin buttons first to prevent duplicates
+            const existingAdminBtns = dashboardActions.querySelectorAll('[onclick*="admin-dashboard"], .admin-btn');
+            existingAdminBtns.forEach(btn => btn.remove());
+            
+            // Add the admin button
+            const adminBtn = document.createElement('button');
+            adminBtn.className = 'btn btn-primary admin-btn';
+            adminBtn.style.background = '#e74c3c';
+            adminBtn.innerHTML = '<i class="fas fa-shield-alt"></i> Admin';
+            adminBtn.onclick = () => app.showPage('admin-dashboard-page');
+            dashboardActions.insertBefore(adminBtn, dashboardActions.lastElementChild);
+        } else if (dashboardActions) {
+            // Remove admin button if user is not admin
+            const existingAdminBtns = dashboardActions.querySelectorAll('[onclick*="admin-dashboard"], .admin-btn');
+            existingAdminBtns.forEach(btn => btn.remove());
         }
 
         // Load posts
@@ -1574,10 +1623,18 @@ class FacebookLiteApp {
                     <h4>${user.firstName || ''} ${user.lastName || ''}</h4>
                     <p>@${user.username}</p>
                     <p>${user.email}</p>
-                    <p>Role: ${user.role || 'USER'}</p>
+                    <p><strong>Role:</strong> <span style="color: ${user.role === 'ADMIN' ? '#e74c3c' : '#666'}">${user.role || 'USER'}</span></p>
                 </div>
                 <div class="user-actions">
-                    <button class="btn btn-secondary btn-small" onclick="app.deleteUserAsAdmin(${user.userId})">
+                    ${user.role === 'ADMIN' 
+                        ? `<button class="btn btn-secondary btn-small" onclick="app.demoteUserFromAdmin(${user.userId}, '${user.username}')" style="background: #f39c12;">
+                            Demote from Admin
+                           </button>`
+                        : `<button class="btn btn-primary btn-small" onclick="app.promoteUserToAdmin(${user.userId}, '${user.username}')" style="background: #27ae60;">
+                            Promote to Admin
+                           </button>`
+                    }
+                    <button class="btn btn-secondary btn-small" onclick="app.deleteUserAsAdmin(${user.userId})" style="background: #e74c3c;">
                         Delete
                     </button>
                 </div>
@@ -1602,6 +1659,54 @@ class FacebookLiteApp {
         } catch (error) {
             console.error('Error searching users:', error);
             this.showToast('Error searching users', 'error');
+        }
+    }
+
+    async promoteUserToAdmin(userId, username) {
+        if (!confirm(`Are you sure you want to promote ${username} to admin?`)) {
+            return;
+        }
+
+        try {
+            const response = await this.authFetch(`${this.apiBaseUrl}/admin/users/${userId}/promote`, {
+                method: 'PUT'
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                this.showToast(`${username} promoted to admin successfully!`, 'success');
+                await this.loadAllUsers();
+            } else {
+                const errorData = await response.json().catch(() => ({}));
+                this.showToast(errorData.error || 'Failed to promote user', 'error');
+            }
+        } catch (error) {
+            console.error('Error promoting user:', error);
+            this.showToast('Error promoting user', 'error');
+        }
+    }
+
+    async demoteUserFromAdmin(userId, username) {
+        if (!confirm(`Are you sure you want to demote ${username} from admin?`)) {
+            return;
+        }
+
+        try {
+            const response = await this.authFetch(`${this.apiBaseUrl}/admin/users/${userId}/demote`, {
+                method: 'PUT'
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                this.showToast(`${username} demoted from admin successfully!`, 'success');
+                await this.loadAllUsers();
+            } else {
+                const errorData = await response.json().catch(() => ({}));
+                this.showToast(errorData.error || 'Failed to demote user', 'error');
+            }
+        } catch (error) {
+            console.error('Error demoting user:', error);
+            this.showToast('Error demoting user', 'error');
         }
     }
 

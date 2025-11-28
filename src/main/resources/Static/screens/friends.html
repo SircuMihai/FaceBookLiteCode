@@ -1,0 +1,39 @@
+<!-- Friends Page -->
+<section id="friends-page" class="page">
+    <div class="friends-container">
+        <div class="friends-header">
+            <h2>Find Friends</h2>
+            <button class="btn btn-secondary" onclick="app.showPage('dashboard-page')">Back to Dashboard</button>
+        </div>
+        
+        <div class="friends-content">
+            <div class="search-section">
+                <h3>Search for Friends</h3>
+                <div class="search-form">
+                    <input type="text" id="friend-search" placeholder="Search by username, first name, or last name..." onkeyup="app.searchFriends()">
+                    <button class="btn btn-primary" onclick="app.searchFriends()">Search</button>
+                </div>
+            </div>
+
+            <div class="search-results" id="search-results">
+                <!-- Search results will be loaded here -->
+            </div>
+
+            <div class="friend-requests-section">
+                <h3>Friend Requests</h3>
+                <div class="friend-requests" id="friend-requests">
+                    <!-- Friend requests will be loaded here -->
+                </div>
+            </div>
+
+            <div class="current-friends-section">
+                <h3>My Friends</h3>
+                <div class="current-friends" id="current-friends">
+                    <!-- Current friends will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+

@@ -1,0 +1,108 @@
+<!-- Admin Dashboard Page -->
+<section id="admin-dashboard-page" class="page">
+    <div class="admin-container">
+        <div class="admin-header">
+            <h2><i class="fas fa-shield-alt"></i> Admin Dashboard</h2>
+            <div class="admin-actions">
+                <button class="btn btn-secondary" onclick="app.showPage('dashboard-page')">Back to Dashboard</button>
+                <button class="btn btn-secondary" onclick="app.logout()">Logout</button>
+            </div>
+        </div>
+        
+        <div class="admin-content">
+            <!-- Statistics Cards -->
+            <div class="admin-stats">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+                    <div class="stat-info">
+                        <h3 id="total-users">0</h3>
+                        <p>Total Users</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
+                    <div class="stat-info">
+                        <h3 id="total-posts">0</h3>
+                        <p>Total Posts</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-comments"></i></div>
+                    <div class="stat-info">
+                        <h3 id="total-comments">0</h3>
+                        <p>Total Comments</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-heart"></i></div>
+                    <div class="stat-info">
+                        <h3 id="total-likes">0</h3>
+                        <p>Total Likes</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Management Sections -->
+            <div class="admin-sections">
+                <!-- Users Management -->
+                <div class="admin-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-user-cog"></i> User Management</h3>
+                        <button class="btn btn-primary btn-small" onclick="app.loadAllUsers()">Refresh</button>
+                    </div>
+                    <div class="section-content">
+                        <div class="search-bar">
+                            <input type="text" id="user-search" placeholder="Search users..." onkeyup="app.searchUsers()">
+                            <button class="btn btn-primary btn-small" onclick="app.searchUsers()">Search</button>
+                        </div>
+                        <div class="users-list" id="users-list">
+                            <!-- Users will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Posts Management -->
+                <div class="admin-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-file-alt"></i> Posts Management</h3>
+                        <button class="btn btn-primary btn-small" onclick="app.loadAllPosts()">Refresh</button>
+                    </div>
+                    <div class="section-content">
+                        <div class="posts-list" id="admin-posts-list">
+                            <!-- Posts will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Information -->
+                <div class="admin-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-info-circle"></i> System Information</h3>
+                    </div>
+                    <div class="section-content">
+                        <div class="system-info">
+                            <div class="info-item">
+                                <label>Application Name:</label>
+                                <span>FacebookLite</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Server Port:</label>
+                                <span>8082</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Database:</label>
+                                <span>PostgreSQL</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Last Updated:</label>
+                                <span id="last-updated"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+

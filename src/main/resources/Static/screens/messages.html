@@ -1,0 +1,39 @@
+<!-- Messages Page -->
+<section id="messages-page" class="page">
+    <div class="messages-container">
+        <div class="messages-header">
+            <h2>Messages</h2>
+            <button class="btn btn-secondary" onclick="app.showPage('dashboard-page')">Back to Dashboard</button>
+        </div>
+        
+        <div class="messages-content">
+            <div class="conversations-list">
+                <h3>Conversations</h3>
+                <div class="conversations" id="conversations-list">
+                    <!-- Conversations will be loaded here -->
+                </div>
+            </div>
+            
+            <div class="chat-area">
+                <div class="chat-header" id="chat-header">
+                    <h3>Select a conversation to start messaging</h3>
+                </div>
+                
+                <div class="chat-messages" id="chat-messages">
+                    <!-- Messages will be displayed here -->
+                </div>
+                
+                <div class="chat-input-area" id="chat-input-area" style="display: none;">
+                    <form id="message-form">
+                        <div class="message-input-group">
+                            <input type="text" id="message-input" placeholder="Type a message..." required>
+                            <button type="submit" class="btn btn-primary">Send</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+

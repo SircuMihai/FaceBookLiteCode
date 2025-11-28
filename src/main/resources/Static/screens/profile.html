@@ -1,0 +1,60 @@
+<!-- Profile Page -->
+<section id="profile-page" class="page">
+    <div class="profile-container">
+        <div class="profile-header">
+            <div class="profile-avatar">
+                <i class="fas fa-user fa-3x"></i>
+            </div>
+            <div class="profile-info">
+                <h2 id="profile-username"></h2>
+                <p id="profile-email"></p>
+                <p id="profile-name"></p>
+            </div>
+            <div class="profile-actions">
+                <button class="btn btn-primary" onclick="app.editProfile()">Edit Profile</button>
+                <button class="btn btn-secondary" onclick="app.showPage('dashboard-page')">Back to Dashboard</button>
+            </div>
+        </div>
+        
+        <div class="profile-content">
+            <div class="profile-section">
+                <h3>Profile Information</h3>
+                <div class="profile-details">
+                    <div class="detail-item">
+                        <label>Username:</label>
+                        <span id="profile-username-detail"></span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Email:</label>
+                        <span id="profile-email-detail"></span>
+                    </div>
+                    <div class="detail-item">
+                        <label>First Name:</label>
+                        <span id="profile-firstname-detail"></span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Last Name:</label>
+                        <span id="profile-lastname-detail"></span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Account Type:</label>
+                        <span id="profile-account-type"></span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Last Login:</label>
+                        <span id="profile-last-login"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="profile-section">
+                <h3>My Posts</h3>
+                <div class="user-posts" id="user-posts">
+                    <!-- User's posts will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+

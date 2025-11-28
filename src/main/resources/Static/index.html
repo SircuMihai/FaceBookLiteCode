@@ -33,7 +33,7 @@
 
     <!-- Main Content -->
     <main class="main-content" id="main-content">
-        <!-- Home Page -->
+        <!-- Home Page (Initial page - loaded statically) -->
         <section id="home-page" class="page active">
             <div class="hero-section">
                 <div class="hero-content">
@@ -49,343 +49,7 @@
                 </div>
             </div>
         </section>
-
-        <!-- Login Page -->
-        <section id="login-page" class="page">
-            <div class="auth-container">
-                <div class="auth-card">
-                    <div class="auth-header">
-                        <h2>Welcome Back</h2>
-                        <p>Sign in to your account</p>
-                    </div>
-                    <form id="login-form" class="auth-form">
-                        <div class="form-group">
-                            <label for="login-username">Username</label>
-                            <input type="text" id="login-username" name="username" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="login-password">Password</label>
-                            <input type="password" id="login-password" name="password" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-full">Sign In</button>
-                    </form>
-                    <div class="auth-footer">
-                        <p>Don't have an account? <a href="#" onclick="app.showSignUp()">Sign up</a></p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Sign Up Page -->
-        <section id="signup-page" class="page">
-            <div class="auth-container">
-                <div class="auth-card">
-                    <div class="auth-header">
-                        <h2>Create Account</h2>
-                        <p>Join FacebookLite today</p>
-                    </div>
-                    <form id="signup-form" class="auth-form">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="signup-firstname">First Name</label>
-                                <input type="text" id="signup-firstname" name="firstName" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="signup-lastname">Last Name</label>
-                                <input type="text" id="signup-lastname" name="lastName" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="signup-username">Username</label>
-                            <input type="text" id="signup-username" name="username" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="signup-email">Email</label>
-                            <input type="email" id="signup-email" name="email" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="signup-password">Password</label>
-                            <input type="password" id="signup-password" name="password" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-full">Create Account</button>
-                    </form>
-                    <div class="auth-footer">
-                        <p>Already have an account? <a href="#" onclick="app.showLogin()">Sign in</a></p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Dashboard Page -->
-        <section id="dashboard-page" class="page">
-            <div class="dashboard-container">
-                <div class="dashboard-header">
-                    <h2>Welcome, <span id="user-name"></span>!</h2>
-                    <div class="dashboard-actions" id="dashboard-actions">
-                        <button class="btn btn-primary" onclick="app.showPage('profile-page')">Profile</button>
-                        <button class="btn btn-primary" onclick="app.showPage('friends-page')">Friends</button>
-                        <button class="btn btn-primary" onclick="app.showPage('messages-page')">Messages</button>
-                        <button class="btn btn-secondary" onclick="app.logout()">Logout</button>
-                    </div>
-                </div>
-                <div class="dashboard-content">
-                    <div class="post-section">
-                        <div class="post-form">
-                            <h3>Create a Post</h3>
-                            <form id="post-form">
-                                <textarea id="post-content" placeholder="What's on your mind?" required></textarea>
-                                <button type="submit" class="btn btn-primary">Post</button>
-                            </form>
-                        </div>
-                        <div class="posts-feed" id="posts-feed">
-                            <!-- Posts will be loaded here -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Profile Page -->
-        <section id="profile-page" class="page">
-            <div class="profile-container">
-                <div class="profile-header">
-                    <div class="profile-avatar">
-                        <i class="fas fa-user fa-3x"></i>
-                    </div>
-                    <div class="profile-info">
-                        <h2 id="profile-username"></h2>
-                        <p id="profile-email"></p>
-                        <p id="profile-name"></p>
-                    </div>
-                    <div class="profile-actions">
-                        <button class="btn btn-primary" onclick="app.editProfile()">Edit Profile</button>
-                        <button class="btn btn-secondary" onclick="app.showPage('dashboard-page')">Back to Dashboard</button>
-                    </div>
-                </div>
-                
-                <div class="profile-content">
-                    <div class="profile-section">
-                        <h3>Profile Information</h3>
-                        <div class="profile-details">
-                            <div class="detail-item">
-                                <label>Username:</label>
-                                <span id="profile-username-detail"></span>
-                            </div>
-                            <div class="detail-item">
-                                <label>Email:</label>
-                                <span id="profile-email-detail"></span>
-                            </div>
-                            <div class="detail-item">
-                                <label>First Name:</label>
-                                <span id="profile-firstname-detail"></span>
-                            </div>
-                            <div class="detail-item">
-                                <label>Last Name:</label>
-                                <span id="profile-lastname-detail"></span>
-                            </div>
-                            <div class="detail-item">
-                                <label>Account Type:</label>
-                                <span id="profile-account-type"></span>
-                            </div>
-                            <div class="detail-item">
-                                <label>Last Login:</label>
-                                <span id="profile-last-login"></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="profile-section">
-                        <h3>My Posts</h3>
-                        <div class="user-posts" id="user-posts">
-                            <!-- User's posts will be loaded here -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Friends Page -->
-        <section id="friends-page" class="page">
-            <div class="friends-container">
-                <div class="friends-header">
-                    <h2>Find Friends</h2>
-                    <button class="btn btn-secondary" onclick="app.showPage('dashboard-page')">Back to Dashboard</button>
-                </div>
-                
-                <div class="friends-content">
-                    <div class="search-section">
-                        <h3>Search for Friends</h3>
-                        <div class="search-form">
-                            <input type="text" id="friend-search" placeholder="Search by username, first name, or last name..." onkeyup="app.searchFriends()">
-                            <button class="btn btn-primary" onclick="app.searchFriends()">Search</button>
-                        </div>
-                    </div>
-
-                    <div class="search-results" id="search-results">
-                        <!-- Search results will be loaded here -->
-                    </div>
-
-                    <div class="friend-requests-section">
-                        <h3>Friend Requests</h3>
-                        <div class="friend-requests" id="friend-requests">
-                            <!-- Friend requests will be loaded here -->
-                        </div>
-                    </div>
-
-                    <div class="current-friends-section">
-                        <h3>My Friends</h3>
-                        <div class="current-friends" id="current-friends">
-                            <!-- Current friends will be loaded here -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Messages Page -->
-        <section id="messages-page" class="page">
-            <div class="messages-container">
-                <div class="messages-header">
-                    <h2>Messages</h2>
-                    <button class="btn btn-secondary" onclick="app.showPage('dashboard-page')">Back to Dashboard</button>
-                </div>
-                
-                <div class="messages-content">
-                    <div class="conversations-list">
-                        <h3>Conversations</h3>
-                        <div class="conversations" id="conversations-list">
-                            <!-- Conversations will be loaded here -->
-                        </div>
-                    </div>
-                    
-                    <div class="chat-area">
-                        <div class="chat-header" id="chat-header">
-                            <h3>Select a conversation to start messaging</h3>
-                        </div>
-                        
-                        <div class="chat-messages" id="chat-messages">
-                            <!-- Messages will be displayed here -->
-                        </div>
-                        
-                        <div class="chat-input-area" id="chat-input-area" style="display: none;">
-                            <form id="message-form">
-                                <div class="message-input-group">
-                                    <input type="text" id="message-input" placeholder="Type a message..." required>
-                                    <button type="submit" class="btn btn-primary">Send</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Admin Dashboard Page -->
-        <section id="admin-dashboard-page" class="page">
-            <div class="admin-container">
-                <div class="admin-header">
-                    <h2><i class="fas fa-shield-alt"></i> Admin Dashboard</h2>
-                    <div class="admin-actions">
-                        <button class="btn btn-secondary" onclick="app.showPage('dashboard-page')">Back to Dashboard</button>
-                        <button class="btn btn-secondary" onclick="app.logout()">Logout</button>
-                    </div>
-                </div>
-                
-                <div class="admin-content">
-                    <!-- Statistics Cards -->
-                    <div class="admin-stats">
-                        <div class="stat-card">
-                            <div class="stat-icon"><i class="fas fa-users"></i></div>
-                            <div class="stat-info">
-                                <h3 id="total-users">0</h3>
-                                <p>Total Users</p>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
-                            <div class="stat-info">
-                                <h3 id="total-posts">0</h3>
-                                <p>Total Posts</p>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon"><i class="fas fa-comments"></i></div>
-                            <div class="stat-info">
-                                <h3 id="total-comments">0</h3>
-                                <p>Total Comments</p>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon"><i class="fas fa-heart"></i></div>
-                            <div class="stat-info">
-                                <h3 id="total-likes">0</h3>
-                                <p>Total Likes</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Management Sections -->
-                    <div class="admin-sections">
-                        <!-- Users Management -->
-                        <div class="admin-section">
-                            <div class="section-header">
-                                <h3><i class="fas fa-user-cog"></i> User Management</h3>
-                                <button class="btn btn-primary btn-small" onclick="app.loadAllUsers()">Refresh</button>
-                            </div>
-                            <div class="section-content">
-                                <div class="search-bar">
-                                    <input type="text" id="user-search" placeholder="Search users..." onkeyup="app.searchUsers()">
-                                    <button class="btn btn-primary btn-small" onclick="app.searchUsers()">Search</button>
-                                </div>
-                                <div class="users-list" id="users-list">
-                                    <!-- Users will be loaded here -->
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Posts Management -->
-                        <div class="admin-section">
-                            <div class="section-header">
-                                <h3><i class="fas fa-file-alt"></i> Posts Management</h3>
-                                <button class="btn btn-primary btn-small" onclick="app.loadAllPosts()">Refresh</button>
-                            </div>
-                            <div class="section-content">
-                                <div class="posts-list" id="admin-posts-list">
-                                    <!-- Posts will be loaded here -->
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- System Information -->
-                        <div class="admin-section">
-                            <div class="section-header">
-                                <h3><i class="fas fa-info-circle"></i> System Information</h3>
-                            </div>
-                            <div class="section-content">
-                                <div class="system-info">
-                                    <div class="info-item">
-                                        <label>Application Name:</label>
-                                        <span>FacebookLite</span>
-                                    </div>
-                                    <div class="info-item">
-                                        <label>Server Port:</label>
-                                        <span>8082</span>
-                                    </div>
-                                    <div class="info-item">
-                                        <label>Database:</label>
-                                        <span>PostgreSQL</span>
-                                    </div>
-                                    <div class="info-item">
-                                        <label>Last Updated:</label>
-                                        <span id="last-updated"></span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
+        <!-- All other pages are loaded dynamically from /screens/ directory -->
     </main>
 
         <!-- Edit Profile Modal -->
@@ -423,7 +87,6 @@
                 </form>
             </div>
         </div>
-</main>
 
     <!-- Loading Spinner -->
     <div id="loading" class="loading hidden">
@@ -454,7 +117,29 @@
             
             if (!screenFile) {
                 console.error('Screen not found:', screenId);
-                mainContent.innerHTML = `<div class="error-message" style="padding: 40px; text-align: center;">Screen not found: ${screenId}</div>`;
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                errorDiv.style.cssText = 'padding: 40px; text-align: center;';
+                errorDiv.innerHTML = `<p>Screen not found: ${screenId}</p>`;
+                mainContent.appendChild(errorDiv);
+                return;
+            }
+            
+            // Special handling for home-page (already in DOM)
+            if (screenId === 'home-page') {
+                // Hide all other pages
+                const allPages = mainContent.querySelectorAll('.page');
+                allPages.forEach(page => {
+                    page.classList.remove('active');
+                    if (page.id !== 'home-page') {
+                        page.remove();
+                    }
+                });
+                // Show home page
+                const homePage = document.getElementById('home-page');
+                if (homePage) {
+                    homePage.classList.add('active');
+                }
                 return;
             }
             
@@ -472,8 +157,14 @@
                     throw new Error('Screen file is empty');
                 }
                 
-                // Remove existing screens
-                mainContent.innerHTML = '';
+                // Remove all existing pages (except keep home-page in DOM but hidden)
+                const allPages = mainContent.querySelectorAll('.page');
+                allPages.forEach(page => {
+                    page.classList.remove('active');
+                    if (page.id !== 'home-page') {
+                        page.remove();
+                    }
+                });
                 
                 // Add new screen
                 const tempDiv = document.createElement('div');
@@ -498,6 +189,8 @@
                     throw new Error('No valid HTML element with ID found in screen file');
                 }
                 
+                // Add active class and append to DOM
+                screenElement.classList.add('page', 'active');
                 mainContent.appendChild(screenElement);
                 
                 // Verify the element is in the DOM
@@ -508,16 +201,17 @@
                 
                 console.log('Screen element added to DOM:', screenElement.id);
                 
-                // Event listeners will be reattached by showPage function
             } catch (error) {
                 console.error('Error loading screen:', error);
-                mainContent.innerHTML = `
-                    <div class="error-message" style="padding: 40px; text-align: center; color: #e74c3c;">
-                        <h3>Error loading screen: ${screenId}</h3>
-                        <p>${error.message}</p>
-                        <p style="font-size: 0.9em; color: #666;">Please check the console for more details.</p>
-                    </div>
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                errorDiv.style.cssText = 'padding: 40px; text-align: center; color: #e74c3c;';
+                errorDiv.innerHTML = `
+                    <h3>Error loading screen: ${screenId}</h3>
+                    <p>${error.message}</p>
+                    <p style="font-size: 0.9em; color: #666;">Please check the console for more details.</p>
                 `;
+                mainContent.appendChild(errorDiv);
             }
         }
         
