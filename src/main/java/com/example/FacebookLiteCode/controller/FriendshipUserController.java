@@ -1,11 +1,15 @@
 package com.example.FacebookLiteCode.controller;
 
 import com.example.FacebookLiteCode.services.FriendshipUserService;
+import com.example.FacebookLiteCode.repository.UsersRepository;
+import com.example.FacebookLiteCode.model.Users;
 import com.example.FacebookLiteCode.dto.FriendshipRequestDTO;
 import com.example.FacebookLiteCode.dto.FriendshipResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
@@ -21,6 +25,9 @@ public class FriendshipUserController {
 
     @Autowired
     private FriendshipUserService friendshipUserService;
+    
+    @Autowired
+    private UsersRepository usersRepository;
 
     @GetMapping
     public List<FriendshipResponseDTO> getAllFriendships() {
@@ -55,11 +62,45 @@ public class FriendshipUserController {
         }
     }
 
+    /**
+     * Delete friendship - Only ADMIN role can delete friendships
+     * Regular users (USER role) are blocked from deleting
+     */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteFriendship(@PathVariable int id) {
+    public ResponseEntity<Map<String, String>> deleteFriendship(@PathVariable int id) {
+        // Get current authenticated user from JWT token
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Authentication required");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Extract username from JWT token (set by JwtAuthenticationFilter)
+        String username = authentication.getName();
+        Users currentUser = usersRepository.findByUsername(username)
+                .orElse(null);
+        
+        if (currentUser == null) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "User not found");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Check role - only ADMIN can delete friendships
+        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
+        if (!"ADMIN".equals(role)) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Access denied. Only administrators can delete friendships.");
+            return ResponseEntity.status(403).body(error);
+        }
+        
+        // Admin can delete friendship
         if (friendshipUserService.getFriendshipById(id).isPresent()) {
             friendshipUserService.deleteFriendship(id);
-            return ResponseEntity.ok().build();
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Friendship deleted successfully");
+            return ResponseEntity.ok(response);
         }
         return ResponseEntity.notFound().build();
     }
@@ -129,8 +170,39 @@ public class FriendshipUserController {
         }
     }
 
+    /**
+     * Decline friend request - Only ADMIN role can decline friend requests
+     * Regular users (USER role) are blocked
+     */
     @DeleteMapping("/{id}/decline")
     public ResponseEntity<?> declineFriendRequest(@PathVariable int id) {
+        // Get current authenticated user from JWT token
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Authentication required");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Extract username from JWT token (set by JwtAuthenticationFilter)
+        String username = authentication.getName();
+        Users currentUser = usersRepository.findByUsername(username)
+                .orElse(null);
+        
+        if (currentUser == null) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "User not found");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Check role - only ADMIN can decline friend requests
+        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
+        if (!"ADMIN".equals(role)) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Access denied. Only administrators can decline friend requests.");
+            return ResponseEntity.status(403).body(error);
+        }
+        
         try {
             if (friendshipUserService.getFriendshipById(id).isPresent()) {
                 friendshipUserService.deleteFriendship(id);
@@ -149,11 +221,45 @@ public class FriendshipUserController {
         }
     }
 
+    /**
+     * Remove friend - Only ADMIN role can remove friends
+     * Regular users (USER role) are blocked
+     */
     @DeleteMapping("/{id}/remove")
-    public ResponseEntity<Void> removeFriend(@PathVariable int id) {
+    public ResponseEntity<Map<String, String>> removeFriend(@PathVariable int id) {
+        // Get current authenticated user from JWT token
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Authentication required");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Extract username from JWT token (set by JwtAuthenticationFilter)
+        String username = authentication.getName();
+        Users currentUser = usersRepository.findByUsername(username)
+                .orElse(null);
+        
+        if (currentUser == null) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "User not found");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Check role - only ADMIN can remove friends
+        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
+        if (!"ADMIN".equals(role)) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Access denied. Only administrators can remove friends.");
+            return ResponseEntity.status(403).body(error);
+        }
+        
+        // Admin can remove friend
         if (friendshipUserService.getFriendshipById(id).isPresent()) {
             friendshipUserService.deleteFriendship(id);
-            return ResponseEntity.ok().build();
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Friend removed successfully");
+            return ResponseEntity.ok(response);
         }
         return ResponseEntity.notFound().build();
     }

@@ -13,9 +13,9 @@ import com.example.FacebookLiteCode.dto.PostRequestDTO;
 import com.example.FacebookLiteCode.dto.PostResponseDTO;
 import jakarta.validation.Valid;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -56,46 +56,46 @@ public class PostController {
     }
 
     /**
-     * Delete a post - Users can only delete their own posts
-     * Admins can delete any post via /api/admin/posts/{id}
+     * Delete post - Only ADMIN role can delete posts
+     * Regular users (USER role) are blocked from deleting
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, String>> deletePost(@PathVariable int id) {
-        // Get current authenticated user
+        // Get current authenticated user from JWT token
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(401).build();
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Authentication required");
+            return ResponseEntity.status(401).body(error);
         }
         
+        // Extract username from JWT token (set by JwtAuthenticationFilter)
         String username = authentication.getName();
         Users currentUser = usersRepository.findByUsername(username)
                 .orElse(null);
         
         if (currentUser == null) {
-            return ResponseEntity.status(401).build();
-        }
-        
-        // Check if post exists
-        PostResponseDTO post = postService.getPostResponseById(id);
-        if (post == null) {
-            return ResponseEntity.notFound().build();
-        }
-        
-        // Check if user is the owner of the post OR is an admin
-        boolean isOwner = post.getUserId() == currentUser.getUserId();
-        boolean isAdmin = "ADMIN".equals(currentUser.getRole());
-        
-        if (!isOwner && !isAdmin) {
             Map<String, String> error = new HashMap<>();
-            error.put("error", "You can only delete your own posts");
+            error.put("error", "User not found");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Check role - only ADMIN can delete posts
+        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
+        if (!"ADMIN".equals(role)) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Access denied. Only administrators can delete posts.");
             return ResponseEntity.status(403).body(error);
         }
         
-        // Delete the post
-        postService.deletePost(id);
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Post deleted successfully");
-        return ResponseEntity.ok(response);
+        // Admin can delete post
+        if (postService.getPostById(id).isPresent()) {
+            postService.deletePost(id);
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Post deleted successfully");
+            return ResponseEntity.ok(response);
+        }
+        return ResponseEntity.notFound().build();
     }
 
     @GetMapping("/user/{userId}")

@@ -78,12 +78,12 @@ public class MesagesController {
     }
     
     /**
-     * Delete a message - Users can only delete their own messages (as sender or receiver)
-     * Admins can delete any message
+     * Delete message - Only ADMIN role can delete messages
+     * Regular users (USER role) are blocked from deleting
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, String>> deleteMessage(@PathVariable int id) {
-        // Get current authenticated user
+        // Get current authenticated user from JWT token
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
             Map<String, String> error = new HashMap<>();
@@ -91,6 +91,7 @@ public class MesagesController {
             return ResponseEntity.status(401).body(error);
         }
         
+        // Extract username from JWT token (set by JwtAuthenticationFilter)
         String username = authentication.getName();
         Users currentUser = usersRepository.findByUsername(username)
                 .orElse(null);
@@ -101,28 +102,22 @@ public class MesagesController {
             return ResponseEntity.status(401).body(error);
         }
         
-        // Check if message exists
-        MessageResponseDTO message = mesagesService.getMessageResponseById(id);
-        if (message == null) {
-            return ResponseEntity.notFound().build();
-        }
-        
-        // Check if user is the sender or receiver of the message OR is an admin
-        boolean isSender = message.getSenderId() == currentUser.getUserId();
-        boolean isReceiver = message.getReceiverId() == currentUser.getUserId();
-        boolean isAdmin = "ADMIN".equals(currentUser.getRole());
-        
-        if (!isSender && !isReceiver && !isAdmin) {
+        // Check role - only ADMIN can delete messages
+        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
+        if (!"ADMIN".equals(role)) {
             Map<String, String> error = new HashMap<>();
-            error.put("error", "You can only delete your own messages");
+            error.put("error", "Access denied. Only administrators can delete messages.");
             return ResponseEntity.status(403).body(error);
         }
         
-        // Delete the message
-        mesagesService.deleteMessage(id);
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Message deleted successfully");
-        return ResponseEntity.ok(response);
+        // Admin can delete message
+        if (mesagesService.getMessageById(id).isPresent()) {
+            mesagesService.deleteMessage(id);
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Message deleted successfully");
+            return ResponseEntity.ok(response);
+        }
+        return ResponseEntity.notFound().build();
     }
     
     @GetMapping("/user/{userId}")

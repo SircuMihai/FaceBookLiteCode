@@ -52,12 +52,12 @@ public class ComentsController {
     }
     
     /**
-     * Delete a comment - Users can only delete their own comments
-     * Admins can delete any comment
+     * Delete comment - Only ADMIN role can delete comments
+     * Regular users (USER role) are blocked from deleting
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, String>> deleteComment(@PathVariable int id) {
-        // Get current authenticated user
+        // Get current authenticated user from JWT token
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
             Map<String, String> error = new HashMap<>();
@@ -65,6 +65,7 @@ public class ComentsController {
             return ResponseEntity.status(401).body(error);
         }
         
+        // Extract username from JWT token (set by JwtAuthenticationFilter)
         String username = authentication.getName();
         Users currentUser = usersRepository.findByUsername(username)
                 .orElse(null);
@@ -75,27 +76,22 @@ public class ComentsController {
             return ResponseEntity.status(401).body(error);
         }
         
-        // Check if comment exists
-        CommentResponseDTO comment = comentsService.getCommentResponseById(id);
-        if (comment == null) {
-            return ResponseEntity.notFound().build();
-        }
-        
-        // Check if user is the owner of the comment OR is an admin
-        boolean isOwner = comment.getUserId() == currentUser.getUserId();
-        boolean isAdmin = "ADMIN".equals(currentUser.getRole());
-        
-        if (!isOwner && !isAdmin) {
+        // Check role - only ADMIN can delete comments
+        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
+        if (!"ADMIN".equals(role)) {
             Map<String, String> error = new HashMap<>();
-            error.put("error", "You can only delete your own comments");
+            error.put("error", "Access denied. Only administrators can delete comments.");
             return ResponseEntity.status(403).body(error);
         }
         
-        // Delete the comment
-        comentsService.deleteComment(id);
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Comment deleted successfully");
-        return ResponseEntity.ok(response);
+        // Admin can delete comment
+        if (comentsService.getCommentById(id).isPresent()) {
+            comentsService.deleteComment(id);
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Comment deleted successfully");
+            return ResponseEntity.ok(response);
+        }
+        return ResponseEntity.notFound().build();
     }
     
     @GetMapping("/post/{postId}")
