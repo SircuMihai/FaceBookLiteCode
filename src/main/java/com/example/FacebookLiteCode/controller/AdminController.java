@@ -20,7 +20,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/admin")
 @CrossOrigin(origins = "*")
-@PreAuthorize("hasRole('ADMIN')") // All endpoints in this controller require ADMIN role
 public class AdminController {
 
     @Autowired
