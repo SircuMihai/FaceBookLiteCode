@@ -48,7 +48,7 @@ public class PostController {
      * Regular users (USER role) are blocked
      */
     @PostMapping
-    public ResponseEntity<Map<String, Object>> createPost(@Valid @RequestBody PostRequestDTO request) {
+    public ResponseEntity<?> createPost(@Valid @RequestBody PostRequestDTO request) {
         // Get current authenticated user from JWT token
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -86,7 +86,7 @@ public class PostController {
      * Regular users (USER role) are blocked
      */
     @PutMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> updatePost(@PathVariable int id, @Valid @RequestBody PostRequestDTO request) {
+    public ResponseEntity<?> updatePost(@PathVariable int id, @Valid @RequestBody PostRequestDTO request) {
         // Get current authenticated user from JWT token
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {

@@ -46,7 +46,7 @@ public class FriendshipUserController {
      * Regular users (USER role) are blocked
      */
     @PostMapping
-    public ResponseEntity<Map<String, Object>> createFriendship(@Valid @RequestBody FriendshipRequestDTO request) {
+    public ResponseEntity<?> createFriendship(@Valid @RequestBody FriendshipRequestDTO request) {
         // Get current authenticated user from JWT token
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -87,7 +87,7 @@ public class FriendshipUserController {
      * Regular users (USER role) are blocked
      */
     @PutMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> updateFriendship(@PathVariable int id, @Valid @RequestBody FriendshipRequestDTO request) {
+    public ResponseEntity<?> updateFriendship(@PathVariable int id, @Valid @RequestBody FriendshipRequestDTO request) {
         // Get current authenticated user from JWT token
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -195,7 +195,7 @@ public class FriendshipUserController {
      * Regular users (USER role) are blocked
      */
     @PostMapping("/friend-request")
-    public ResponseEntity<Map<String, Object>> sendFriendRequest(@RequestBody FriendshipRequestDTO request) {
+    public ResponseEntity<?> sendFriendRequest(@RequestBody FriendshipRequestDTO request) {
         // Get current authenticated user from JWT token
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {

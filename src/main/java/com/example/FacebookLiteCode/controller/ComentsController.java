@@ -44,7 +44,7 @@ public class ComentsController {
      * Regular users (USER role) are blocked
      */
     @PostMapping
-    public ResponseEntity<Map<String, Object>> createComment(@Valid @RequestBody CommentRequestDTO request) {
+    public ResponseEntity<?> createComment(@Valid @RequestBody CommentRequestDTO request) {
         // Get current authenticated user from JWT token
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -82,7 +82,7 @@ public class ComentsController {
      * Regular users (USER role) are blocked
      */
     @PutMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> updateComment(@PathVariable int id, @Valid @RequestBody CommentRequestDTO request) {
+    public ResponseEntity<?> updateComment(@PathVariable int id, @Valid @RequestBody CommentRequestDTO request) {
         // Get current authenticated user from JWT token
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {

@@ -83,7 +83,7 @@ public class MesagesController {
      * Regular users (USER role) are blocked
      */
     @PostMapping
-    public ResponseEntity<Map<String, Object>> createMessage(@RequestBody MessageRequestDTO request) {
+    public ResponseEntity<?> createMessage(@RequestBody MessageRequestDTO request) {
         // Get current authenticated user from JWT token
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -137,7 +137,7 @@ public class MesagesController {
      * Regular users (USER role) are blocked
      */
     @PutMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> updateMessage(@PathVariable int id, @Valid @RequestBody MessageRequestDTO request) {
+    public ResponseEntity<?> updateMessage(@PathVariable int id, @Valid @RequestBody MessageRequestDTO request) {
         // Get current authenticated user from JWT token
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
