@@ -453,12 +453,17 @@ class FacebookLiteApp {
 
         // Add admin button if user is admin
         const dashboardActions = document.getElementById('dashboard-actions');
-        if (dashboardActions && this.currentUser.role === 'ADMIN') {
-            // Check if admin button already exists
-            const existingAdminBtn = dashboardActions.querySelector('[onclick*="admin-dashboard"]');
-            if (!existingAdminBtn) {
+        if (dashboardActions) {
+            // Remove any existing admin button to prevent duplicates
+            const existingAdminBtn = dashboardActions.querySelector('.admin-button');
+            if (existingAdminBtn) {
+                existingAdminBtn.remove();
+            }
+
+            // Add admin button if user is admin
+            if (this.currentUser.role === 'ADMIN') {
                 const adminBtn = document.createElement('button');
-                adminBtn.className = 'btn btn-primary';
+                adminBtn.className = 'btn btn-primary admin-button';
                 adminBtn.style.background = '#e74c3c';
                 adminBtn.innerHTML = '<i class="fas fa-shield-alt"></i> Admin';
                 adminBtn.onclick = () => app.showPage('admin-dashboard-page');

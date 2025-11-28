@@ -43,22 +43,32 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 username = jwtUtil.extractUsername(jwt);
             } catch (Exception e) {
                 logger.error("Error extracting username from JWT: " + e.getMessage());
+                // Invalid token signature or format - continue without authentication
+                filterChain.doFilter(request, response);
+                return;
             }
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            // First check if token is active in store
             if (!jwtTokenStore.isTokenActive(jwt, username)) {
+                // Token not in store (revoked or never issued) - continue without authentication
                 filterChain.doFilter(request, response);
                 return;
             }
 
+            // Load user details
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
 
+            // Validate token signature and expiration
             if (jwtUtil.validateToken(jwt, userDetails)) {
                 UsernamePasswordAuthenticationToken authenticationToken =
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+            } else {
+                // Token expired or invalid - continue without authentication
+                logger.warn("Token validation failed for user: " + username);
             }
         }
 
