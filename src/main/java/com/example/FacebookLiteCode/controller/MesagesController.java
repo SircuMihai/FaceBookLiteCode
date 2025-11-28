@@ -1,14 +1,20 @@
 package com.example.FacebookLiteCode.controller;
 
 import com.example.FacebookLiteCode.services.MesagesService;
+import com.example.FacebookLiteCode.repository.UsersRepository;
+import com.example.FacebookLiteCode.model.Users;
 import com.example.FacebookLiteCode.dto.MessageRequestDTO;
 import com.example.FacebookLiteCode.dto.MessageResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/messages")
@@ -17,6 +23,9 @@ public class MesagesController {
     
     @Autowired
     private MesagesService mesagesService;
+    
+    @Autowired
+    private UsersRepository usersRepository;
     
     @GetMapping
     public List<MessageResponseDTO> getAllMessages() {
@@ -68,13 +77,52 @@ public class MesagesController {
         }
     }
     
+    /**
+     * Delete a message - Users can only delete their own messages (as sender or receiver)
+     * Admins can delete any message
+     */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteMessage(@PathVariable int id) {
-        if (mesagesService.getMessageById(id).isPresent()) {
-            mesagesService.deleteMessage(id);
-            return ResponseEntity.ok().build();
+    public ResponseEntity<Map<String, String>> deleteMessage(@PathVariable int id) {
+        // Get current authenticated user
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Authentication required");
+            return ResponseEntity.status(401).body(error);
         }
-        return ResponseEntity.notFound().build();
+        
+        String username = authentication.getName();
+        Users currentUser = usersRepository.findByUsername(username)
+                .orElse(null);
+        
+        if (currentUser == null) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "User not found");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Check if message exists
+        MessageResponseDTO message = mesagesService.getMessageResponseById(id);
+        if (message == null) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        // Check if user is the sender or receiver of the message OR is an admin
+        boolean isSender = message.getSenderId() == currentUser.getUserId();
+        boolean isReceiver = message.getReceiverId() == currentUser.getUserId();
+        boolean isAdmin = "ADMIN".equals(currentUser.getRole());
+        
+        if (!isSender && !isReceiver && !isAdmin) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "You can only delete your own messages");
+            return ResponseEntity.status(403).body(error);
+        }
+        
+        // Delete the message
+        mesagesService.deleteMessage(id);
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Message deleted successfully");
+        return ResponseEntity.ok(response);
     }
     
     @GetMapping("/user/{userId}")
