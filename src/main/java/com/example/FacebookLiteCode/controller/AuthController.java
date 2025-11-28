@@ -85,11 +85,20 @@ public class AuthController {
             // Renew session: revoke all previous tokens for this user before issuing a new one
             jwtTokenStore.revokeTokensByUsername(user.getUsername());
 
-            String token = jwtUtil.generateToken(userDetails);
-            jwtTokenStore.storeToken(token, user.getUserId(), user.getUsername());
+            // Generate access token (1 hour expiration)
+            String accessToken = jwtUtil.generateAccessToken(userDetails.getUsername());
+            jwtTokenStore.storeToken(accessToken, user.getUserId(), user.getUsername(), "access");
+
+            // Generate refresh token (5 hours expiration)
+            String refreshToken = jwtUtil.generateRefreshToken(userDetails.getUsername());
+            jwtTokenStore.storeToken(refreshToken, user.getUserId(), user.getUsername(), "refresh");
+            
+            // Link refresh token to access token
+            jwtTokenStore.linkRefreshToAccess(refreshToken, accessToken);
 
             LoginResponseDTO response = new LoginResponseDTO(
-                    token,
+                    accessToken,
+                    refreshToken,
                     user.getUserId(),
                     user.getUsername(),
                     user.getEmail(),
@@ -258,6 +267,70 @@ public class AuthController {
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
             error.put("error", "Token validation failed: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        }
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> request) {
+        try {
+            String refreshToken = request.get("refreshToken");
+            
+            if (refreshToken == null || refreshToken.isEmpty()) {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "Refresh token is required");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+            }
+
+            // Validate refresh token
+            if (!jwtUtil.isRefreshToken(refreshToken)) {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "Invalid refresh token");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+            }
+
+            // Extract username from refresh token
+            String username = jwtUtil.extractUsername(refreshToken);
+            
+            // Check if refresh token is active in store
+            if (!jwtTokenStore.isTokenActive(refreshToken, username)) {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "Refresh token is not active or has been revoked");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+            }
+
+            // Validate token expiration
+            if (!jwtUtil.validateToken(refreshToken, username)) {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "Refresh token has expired");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+            }
+
+            // Get user details
+            Users user = usersRepository.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // Generate new access token
+            String newAccessToken = jwtUtil.generateAccessToken(username);
+            jwtTokenStore.storeToken(newAccessToken, user.getUserId(), username, "access");
+            
+            // Link the refresh token to the new access token
+            jwtTokenStore.linkRefreshToAccess(refreshToken, newAccessToken);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("token", newAccessToken);
+            response.put("refreshToken", refreshToken); // Return same refresh token
+            response.put("type", "Bearer");
+            response.put("userId", user.getUserId());
+            response.put("username", username);
+            response.put("email", user.getEmail());
+            response.put("role", user.getRole() != null ? user.getRole() : "USER");
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Token refresh failed: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
         }
     }

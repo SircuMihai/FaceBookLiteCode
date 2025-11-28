@@ -50,6 +50,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            // Only accept access tokens, not refresh tokens
+            if (!jwtUtil.isAccessToken(jwt)) {
+                logger.warn("Refresh token used in Authorization header. Use access token instead.");
+                filterChain.doFilter(request, response);
+                return;
+            }
+
             // First check if token is active in store
             if (!jwtTokenStore.isTokenActive(jwt, username)) {
                 // Token not in store (revoked or never issued) - continue without authentication
