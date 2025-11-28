@@ -1,7 +1,30 @@
 // FacebookLite Frontend Application
 class FacebookLiteApp {
     constructor() {
-        this.apiBaseUrl = 'http://localhost:8082/api';
+        // Auto-detect API URL based on current location
+        // Allows same code to work locally and remotely
+        const hostname = window.location.hostname;
+        const protocol = window.location.protocol;
+        const port = '8082';
+        
+        // If accessing via localhost/127.0.0.1, use localhost for API
+        // Otherwise, use the same hostname (for remote access)
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+            this.apiBaseUrl = `http://localhost:${port}/api`;
+        } else {
+            // For remote access, use the same hostname but different port
+            // Or if you want to use a different server, set it here:
+            // this.apiBaseUrl = `http://YOUR_SERVER_IP:${port}/api`;
+            this.apiBaseUrl = `${protocol}//${hostname}:${port}/api`;
+        }
+        
+        // Allow override via window.API_BASE_URL (for easy configuration)
+        if (window.API_BASE_URL) {
+            this.apiBaseUrl = window.API_BASE_URL;
+        }
+        
+        console.log('API Base URL:', this.apiBaseUrl);
+        
         this.currentUser = null;
         this.authToken = null;
         this.init();
