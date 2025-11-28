@@ -2,8 +2,13 @@ package com.example.FacebookLiteCode.services;
 
 import com.example.FacebookLiteCode.model.Users;
 import com.example.FacebookLiteCode.repository.UsersRepository;
+import com.example.FacebookLiteCode.repository.LikeRepository;
+import com.example.FacebookLiteCode.repository.MesagesRepository;
+import com.example.FacebookLiteCode.repository.FriendshipUserRepository;
+import com.example.FacebookLiteCode.repository.PostRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.example.FacebookLiteCode.dto.UserRequestDTO;
 import com.example.FacebookLiteCode.dto.UpdateUserRequestDTO;
 import com.example.FacebookLiteCode.dto.UserResponseDTO;
@@ -21,6 +26,18 @@ public class UsersService {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private LikeRepository likeRepository;
+
+    @Autowired
+    private MesagesRepository mesagesRepository;
+
+    @Autowired
+    private FriendshipUserRepository friendshipUserRepository;
+
+    @Autowired
+    private PostRepository postRepository;
     
     public List<Users> getAllUsers() {
         return usersRepository.findAll();
@@ -34,7 +51,32 @@ public class UsersService {
         return usersRepository.save(user);
     }
     
+    @Transactional
     public void deleteUser(int id) {
+        Optional<Users> userOpt = usersRepository.findById(id);
+        if (userOpt.isEmpty()) {
+            return;
+        }
+        
+        // Șterge toate like-urile utilizatorului (like-uri date de el)
+        likeRepository.deleteByUserUserId(id);
+        
+        // Șterge toate like-urile de pe posturile utilizatorului (like-uri primite de el)
+        postRepository.findByUserUserId(id).forEach(post -> {
+            likeRepository.deleteByPostPostId(post.getPostId());
+        });
+        
+        // Șterge toate mesajele trimise de utilizator
+        mesagesRepository.findByUserUserId(id).forEach(mesagesRepository::delete);
+        
+        // Șterge toate mesajele primite de utilizator
+        mesagesRepository.findByReseverUserId(id).forEach(mesagesRepository::delete);
+        
+        // Șterge toate prieteniile unde utilizatorul este user1 sau user2
+        friendshipUserRepository.findByUser1UserId(id).forEach(friendshipUserRepository::delete);
+        friendshipUserRepository.findByUser2UserId(id).forEach(friendshipUserRepository::delete);
+        
+        // Șterge utilizatorul (cascade va șterge automat posturile și comentariile)
         usersRepository.deleteById(id);
     }
     
