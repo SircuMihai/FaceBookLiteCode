@@ -39,13 +39,78 @@ public class ComentsController {
         return ResponseEntity.ok(dto);
     }
     
+    /**
+     * Create comment - Only ADMIN role can create comments
+     * Regular users (USER role) are blocked
+     */
     @PostMapping
-    public ResponseEntity<CommentResponseDTO> createComment(@Valid @RequestBody CommentRequestDTO request) {
-        return ResponseEntity.ok(comentsService.createComment(request));
+    public ResponseEntity<Map<String, Object>> createComment(@Valid @RequestBody CommentRequestDTO request) {
+        // Get current authenticated user from JWT token
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Authentication required");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Extract username from JWT token (set by JwtAuthenticationFilter)
+        String username = authentication.getName();
+        Users currentUser = usersRepository.findByUsername(username)
+                .orElse(null);
+        
+        if (currentUser == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "User not found");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Check role - only ADMIN can create comments
+        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
+        if (!"ADMIN".equals(role)) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Access denied. Only administrators can create comments.");
+            return ResponseEntity.status(403).body(error);
+        }
+        
+        // Admin can create comment
+        CommentResponseDTO created = comentsService.createComment(request);
+        return ResponseEntity.ok(created);
     }
     
+    /**
+     * Update comment - Only ADMIN role can update comments
+     * Regular users (USER role) are blocked
+     */
     @PutMapping("/{id}")
-    public ResponseEntity<CommentResponseDTO> updateComment(@PathVariable int id, @Valid @RequestBody CommentRequestDTO request) {
+    public ResponseEntity<Map<String, Object>> updateComment(@PathVariable int id, @Valid @RequestBody CommentRequestDTO request) {
+        // Get current authenticated user from JWT token
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Authentication required");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Extract username from JWT token (set by JwtAuthenticationFilter)
+        String username = authentication.getName();
+        Users currentUser = usersRepository.findByUsername(username)
+                .orElse(null);
+        
+        if (currentUser == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "User not found");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Check role - only ADMIN can update comments
+        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
+        if (!"ADMIN".equals(role)) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Access denied. Only administrators can update comments.");
+            return ResponseEntity.status(403).body(error);
+        }
+        
+        // Admin can update comment
         return comentsService.updateComment(id, request)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

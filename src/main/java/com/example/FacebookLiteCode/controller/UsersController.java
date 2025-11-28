@@ -41,13 +41,78 @@ public class UsersController {
         return ResponseEntity.ok(user);
     }
 
+    /**
+     * Create user - Only ADMIN role can create users
+     * Regular users (USER role) are blocked
+     */
     @PostMapping
-    public ResponseEntity<UserResponseDTO> createUser(@Valid @RequestBody UserRequestDTO request) {
-        return ResponseEntity.ok(usersService.createUser(request));
+    public ResponseEntity<Map<String, Object>> createUser(@Valid @RequestBody UserRequestDTO request) {
+        // Get current authenticated user from JWT token
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Authentication required");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Extract username from JWT token (set by JwtAuthenticationFilter)
+        String username = authentication.getName();
+        Users currentUser = usersRepository.findByUsername(username)
+                .orElse(null);
+        
+        if (currentUser == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "User not found");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Check role - only ADMIN can create users
+        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
+        if (!"ADMIN".equals(role)) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Access denied. Only administrators can create users.");
+            return ResponseEntity.status(403).body(error);
+        }
+        
+        // Admin can create user
+        UserResponseDTO created = usersService.createUser(request);
+        return ResponseEntity.ok(created);
     }
 
+    /**
+     * Update user - Only ADMIN role can update users
+     * Regular users (USER role) are blocked
+     */
     @PutMapping("/{id}")
-    public ResponseEntity<UserResponseDTO> updateUser(@PathVariable int id, @Valid @RequestBody UpdateUserRequestDTO request) {
+    public ResponseEntity<Map<String, Object>> updateUser(@PathVariable int id, @Valid @RequestBody UpdateUserRequestDTO request) {
+        // Get current authenticated user from JWT token
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Authentication required");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Extract username from JWT token (set by JwtAuthenticationFilter)
+        String username = authentication.getName();
+        Users currentUser = usersRepository.findByUsername(username)
+                .orElse(null);
+        
+        if (currentUser == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "User not found");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Check role - only ADMIN can update users
+        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
+        if (!"ADMIN".equals(role)) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Access denied. Only administrators can update users.");
+            return ResponseEntity.status(403).body(error);
+        }
+        
+        // Admin can update user
         return usersService.updateUser(id, request)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

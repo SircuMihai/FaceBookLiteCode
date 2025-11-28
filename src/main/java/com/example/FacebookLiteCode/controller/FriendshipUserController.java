@@ -41,8 +41,39 @@ public class FriendshipUserController {
         return ResponseEntity.ok(dto);
     }
 
+    /**
+     * Create friendship - Only ADMIN role can create friendships
+     * Regular users (USER role) are blocked
+     */
     @PostMapping
-    public ResponseEntity<FriendshipResponseDTO> createFriendship(@Valid @RequestBody FriendshipRequestDTO request) {
+    public ResponseEntity<Map<String, Object>> createFriendship(@Valid @RequestBody FriendshipRequestDTO request) {
+        // Get current authenticated user from JWT token
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Authentication required");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Extract username from JWT token (set by JwtAuthenticationFilter)
+        String username = authentication.getName();
+        Users currentUser = usersRepository.findByUsername(username)
+                .orElse(null);
+        
+        if (currentUser == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "User not found");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Check role - only ADMIN can create friendships
+        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
+        if (!"ADMIN".equals(role)) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Access denied. Only administrators can create friendships.");
+            return ResponseEntity.status(403).body(error);
+        }
+        
         try {
             FriendshipResponseDTO created = friendshipUserService.createFriendship(request);
             return ResponseEntity.ok(created);
@@ -51,8 +82,39 @@ public class FriendshipUserController {
         }
     }
 
+    /**
+     * Update friendship - Only ADMIN role can update friendships
+     * Regular users (USER role) are blocked
+     */
     @PutMapping("/{id}")
-    public ResponseEntity<FriendshipResponseDTO> updateFriendship(@PathVariable int id, @Valid @RequestBody FriendshipRequestDTO request) {
+    public ResponseEntity<Map<String, Object>> updateFriendship(@PathVariable int id, @Valid @RequestBody FriendshipRequestDTO request) {
+        // Get current authenticated user from JWT token
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Authentication required");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Extract username from JWT token (set by JwtAuthenticationFilter)
+        String username = authentication.getName();
+        Users currentUser = usersRepository.findByUsername(username)
+                .orElse(null);
+        
+        if (currentUser == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "User not found");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Check role - only ADMIN can update friendships
+        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
+        if (!"ADMIN".equals(role)) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Access denied. Only administrators can update friendships.");
+            return ResponseEntity.status(403).body(error);
+        }
+        
         try {
             return friendshipUserService.updateFriendship(id, request)
                     .map(ResponseEntity::ok)
@@ -128,8 +190,39 @@ public class FriendshipUserController {
     }
 
     // Friend request endpoints
+    /**
+     * Send friend request - Only ADMIN role can send friend requests
+     * Regular users (USER role) are blocked
+     */
     @PostMapping("/friend-request")
-    public ResponseEntity<FriendshipResponseDTO> sendFriendRequest(@RequestBody FriendshipRequestDTO request) {
+    public ResponseEntity<Map<String, Object>> sendFriendRequest(@RequestBody FriendshipRequestDTO request) {
+        // Get current authenticated user from JWT token
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Authentication required");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Extract username from JWT token (set by JwtAuthenticationFilter)
+        String username = authentication.getName();
+        Users currentUser = usersRepository.findByUsername(username)
+                .orElse(null);
+        
+        if (currentUser == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "User not found");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Check role - only ADMIN can send friend requests
+        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
+        if (!"ADMIN".equals(role)) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Access denied. Only administrators can send friend requests.");
+            return ResponseEntity.status(403).body(error);
+        }
+        
         try {
             FriendshipResponseDTO created = friendshipUserService.createFriendship(request);
             return ResponseEntity.ok(created);
@@ -148,8 +241,39 @@ public class FriendshipUserController {
         return friendshipUserService.getFriendsDTO(userId);
     }
 
+    /**
+     * Accept friend request - Only ADMIN role can accept friend requests
+     * Regular users (USER role) are blocked
+     */
     @PutMapping("/{id}/accept")
     public ResponseEntity<?> acceptFriendRequest(@PathVariable int id) {
+        // Get current authenticated user from JWT token
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Authentication required");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Extract username from JWT token (set by JwtAuthenticationFilter)
+        String username = authentication.getName();
+        Users currentUser = usersRepository.findByUsername(username)
+                .orElse(null);
+        
+        if (currentUser == null) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "User not found");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Check role - only ADMIN can accept friend requests
+        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
+        if (!"ADMIN".equals(role)) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Access denied. Only administrators can accept friend requests.");
+            return ResponseEntity.status(403).body(error);
+        }
+        
         try {
             Optional<FriendshipResponseDTO> result = friendshipUserService.acceptFriendship(id);
             if (result.isPresent()) {

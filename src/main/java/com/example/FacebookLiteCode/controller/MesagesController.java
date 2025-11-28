@@ -39,14 +39,78 @@ public class MesagesController {
         return ResponseEntity.ok(dto);
     }
     
+    /**
+     * Create message raw (debug) - Only ADMIN role can use this endpoint
+     * Regular users (USER role) are blocked
+     */
     @PostMapping("/raw")
-    public ResponseEntity<String> createMessageRaw(@RequestBody String rawJson) {
+    public ResponseEntity<Map<String, String>> createMessageRaw(@RequestBody String rawJson) {
+        // Get current authenticated user from JWT token
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Authentication required");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Extract username from JWT token (set by JwtAuthenticationFilter)
+        String username = authentication.getName();
+        Users currentUser = usersRepository.findByUsername(username)
+                .orElse(null);
+        
+        if (currentUser == null) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "User not found");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Check role - only ADMIN can use raw endpoint
+        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
+        if (!"ADMIN".equals(role)) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Access denied. Only administrators can use this endpoint.");
+            return ResponseEntity.status(403).body(error);
+        }
+        
         System.out.println("DEBUG - Raw JSON received: " + rawJson);
-        return ResponseEntity.ok("Raw JSON received: " + rawJson);
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Raw JSON received: " + rawJson);
+        return ResponseEntity.ok(response);
     }
     
+    /**
+     * Create message - Only ADMIN role can create messages
+     * Regular users (USER role) are blocked
+     */
     @PostMapping
-    public ResponseEntity<MessageResponseDTO> createMessage(@RequestBody MessageRequestDTO request) {
+    public ResponseEntity<Map<String, Object>> createMessage(@RequestBody MessageRequestDTO request) {
+        // Get current authenticated user from JWT token
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Authentication required");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Extract username from JWT token (set by JwtAuthenticationFilter)
+        String username = authentication.getName();
+        Users currentUser = usersRepository.findByUsername(username)
+                .orElse(null);
+        
+        if (currentUser == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "User not found");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Check role - only ADMIN can create messages
+        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
+        if (!"ADMIN".equals(role)) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Access denied. Only administrators can create messages.");
+            return ResponseEntity.status(403).body(error);
+        }
+        
         System.out.println("DEBUG - Received request: " + request);
         System.out.println("DEBUG - Message: " + request.getMessage());
         System.out.println("DEBUG - Sender ID: " + request.getSenderUserId());
@@ -63,12 +127,44 @@ public class MesagesController {
             return ResponseEntity.badRequest().build();
         }
         
+        // Admin can create message
         MessageResponseDTO created = mesagesService.createMessage(request);
         return ResponseEntity.ok(created);
     }
     
+    /**
+     * Update message - Only ADMIN role can update messages
+     * Regular users (USER role) are blocked
+     */
     @PutMapping("/{id}")
-    public ResponseEntity<MessageResponseDTO> updateMessage(@PathVariable int id, @Valid @RequestBody MessageRequestDTO request) {
+    public ResponseEntity<Map<String, Object>> updateMessage(@PathVariable int id, @Valid @RequestBody MessageRequestDTO request) {
+        // Get current authenticated user from JWT token
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Authentication required");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Extract username from JWT token (set by JwtAuthenticationFilter)
+        String username = authentication.getName();
+        Users currentUser = usersRepository.findByUsername(username)
+                .orElse(null);
+        
+        if (currentUser == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "User not found");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Check role - only ADMIN can update messages
+        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
+        if (!"ADMIN".equals(role)) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Access denied. Only administrators can update messages.");
+            return ResponseEntity.status(403).body(error);
+        }
+        
         try {
             MessageResponseDTO updated = mesagesService.updateMessage(id, request);
             return ResponseEntity.ok(updated);

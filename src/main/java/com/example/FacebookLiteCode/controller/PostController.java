@@ -43,13 +43,78 @@ public class PostController {
         return ResponseEntity.ok(post);
     }
 
+    /**
+     * Create post - Only ADMIN role can create posts
+     * Regular users (USER role) are blocked
+     */
     @PostMapping
-    public ResponseEntity<PostResponseDTO> createPost(@Valid @RequestBody PostRequestDTO request) {
-        return ResponseEntity.ok(postService.createPost(request));
+    public ResponseEntity<Map<String, Object>> createPost(@Valid @RequestBody PostRequestDTO request) {
+        // Get current authenticated user from JWT token
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Authentication required");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Extract username from JWT token (set by JwtAuthenticationFilter)
+        String username = authentication.getName();
+        Users currentUser = usersRepository.findByUsername(username)
+                .orElse(null);
+        
+        if (currentUser == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "User not found");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Check role - only ADMIN can create posts
+        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
+        if (!"ADMIN".equals(role)) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Access denied. Only administrators can create posts.");
+            return ResponseEntity.status(403).body(error);
+        }
+        
+        // Admin can create post
+        PostResponseDTO created = postService.createPost(request);
+        return ResponseEntity.ok(created);
     }
 
+    /**
+     * Update post - Only ADMIN role can update posts
+     * Regular users (USER role) are blocked
+     */
     @PutMapping("/{id}")
-    public ResponseEntity<PostResponseDTO> updatePost(@PathVariable int id, @Valid @RequestBody PostRequestDTO request) {
+    public ResponseEntity<Map<String, Object>> updatePost(@PathVariable int id, @Valid @RequestBody PostRequestDTO request) {
+        // Get current authenticated user from JWT token
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Authentication required");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Extract username from JWT token (set by JwtAuthenticationFilter)
+        String username = authentication.getName();
+        Users currentUser = usersRepository.findByUsername(username)
+                .orElse(null);
+        
+        if (currentUser == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "User not found");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Check role - only ADMIN can update posts
+        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
+        if (!"ADMIN".equals(role)) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Access denied. Only administrators can update posts.");
+            return ResponseEntity.status(403).body(error);
+        }
+        
+        // Admin can update post
         return postService.updatePost(id, request)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -113,8 +178,39 @@ public class PostController {
         return postService.getPostsByDateDTO(date);
     }
     
+    /**
+     * Toggle like - Only ADMIN role can toggle likes
+     * Regular users (USER role) are blocked
+     */
     @PostMapping("/{id}/toggle-like")
     public ResponseEntity<Map<String, Object>> toggleLike(@PathVariable int id, @RequestParam int userId) {
+        // Get current authenticated user from JWT token
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Authentication required");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Extract username from JWT token (set by JwtAuthenticationFilter)
+        String username = authentication.getName();
+        Users currentUser = usersRepository.findByUsername(username)
+                .orElse(null);
+        
+        if (currentUser == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "User not found");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // Check role - only ADMIN can toggle likes
+        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
+        if (!"ADMIN".equals(role)) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Access denied. Only administrators can toggle likes.");
+            return ResponseEntity.status(403).body(error);
+        }
+        
         try {
             boolean isLiked = likeService.toggleLike(id, userId);
             long likeCount = likeService.getLikeCount(id);
