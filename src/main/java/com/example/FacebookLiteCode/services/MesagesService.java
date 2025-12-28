@@ -10,6 +10,8 @@ import com.example.FacebookLiteCode.dto.MessageResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -109,7 +111,14 @@ public class MesagesService {
 
         Mesages entity = new Mesages();
         entity.setMessage(dto.getMessage());
-        entity.setData(dto.getData());
+        // Set current timestamp if data is not provided
+        if (dto.getData() == null || dto.getData().trim().isEmpty()) {
+            LocalDateTime now = LocalDateTime.now();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            entity.setData(now.format(formatter));
+        } else {
+            entity.setData(dto.getData());
+        }
         entity.setPin(dto.isPin());
         entity.setUser(sender);
         entity.setResever(receiver);
@@ -141,7 +150,14 @@ public class MesagesService {
         MessageResponseDTO res = new MessageResponseDTO();
         res.setMessageId(m.getMessageId());
         res.setMessage(m.getMessage());
-        res.setData(m.getData());
+        // If data is null, set current timestamp
+        if (m.getData() == null || m.getData().trim().isEmpty()) {
+            LocalDateTime now = LocalDateTime.now();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            res.setData(now.format(formatter));
+        } else {
+            res.setData(m.getData());
+        }
         res.setPin(m.isPin());
         if (m.getUser() != null) {
             res.setSenderId(m.getUser().getUserId());
