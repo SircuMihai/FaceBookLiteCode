@@ -3,6 +3,7 @@ package com.example.FacebookLiteCode.controller;
 import com.example.FacebookLiteCode.services.FriendshipUserService;
 import com.example.FacebookLiteCode.repository.UsersRepository;
 import com.example.FacebookLiteCode.model.Users;
+import com.example.FacebookLiteCode.model.FriendshipUser;
 import com.example.FacebookLiteCode.dto.FriendshipRequestDTO;
 import com.example.FacebookLiteCode.dto.FriendshipResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,12 +67,24 @@ public class FriendshipUserController {
             return ResponseEntity.status(401).body(error);
         }
         
-        // Check role - only ADMIN can create friendships
-        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
-        if (!"ADMIN".equals(role)) {
+        // Ownership and validation checks
+        if (request.getUser1Id() == null || request.getUser2Id() == null) {
             Map<String, Object> error = new HashMap<>();
-            error.put("error", "Access denied. Only administrators can create friendships.");
+            error.put("error", "user1Id and user2Id are required");
+            return ResponseEntity.status(400).body(error);
+        }
+        if (currentUser.getUserId() != request.getUser1Id()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "You can only create friendships as yourself (user1Id must match authenticated user)");
             return ResponseEntity.status(403).body(error);
+        }
+        if (request.getUser1Id().equals(request.getUser2Id())) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "You cannot send a friend request to yourself");
+            return ResponseEntity.status(400).body(error);
+        }
+        if (request.getStatus() == null || request.getStatus().isBlank()) {
+            request.setStatus("pending");
         }
         
         try {
@@ -215,12 +228,24 @@ public class FriendshipUserController {
             return ResponseEntity.status(401).body(error);
         }
         
-        // Check role - only ADMIN can send friend requests
-        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
-        if (!"ADMIN".equals(role)) {
+        // Ownership and validation checks
+        if (request.getUser1Id() == null || request.getUser2Id() == null) {
             Map<String, Object> error = new HashMap<>();
-            error.put("error", "Access denied. Only administrators can send friend requests.");
+            error.put("error", "user1Id and user2Id are required");
+            return ResponseEntity.status(400).body(error);
+        }
+        if (currentUser.getUserId() != request.getUser1Id()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "You can only send friend requests as yourself");
             return ResponseEntity.status(403).body(error);
+        }
+        if (request.getUser1Id().equals(request.getUser2Id())) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "You cannot send a friend request to yourself");
+            return ResponseEntity.status(400).body(error);
+        }
+        if (request.getStatus() == null || request.getStatus().isBlank()) {
+            request.setStatus("pending");
         }
         
         try {
@@ -266,11 +291,17 @@ public class FriendshipUserController {
             return ResponseEntity.status(401).body(error);
         }
         
-        // Check role - only ADMIN can accept friend requests
-        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
-        if (!"ADMIN".equals(role)) {
+        // Authorization: only the recipient (user2) can accept
+        Optional<FriendshipUser> friendshipOpt = friendshipUserService.getFriendshipById(id);
+        if (friendshipOpt.isEmpty()) {
             Map<String, String> error = new HashMap<>();
-            error.put("error", "Access denied. Only administrators can accept friend requests.");
+            error.put("error", "Friend request not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        }
+        FriendshipUser friendship = friendshipOpt.get();
+        if (friendship.getUser2() == null || friendship.getUser2().getUserId() != currentUser.getUserId()) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Access denied. Only the recipient can accept this request.");
             return ResponseEntity.status(403).body(error);
         }
         
@@ -319,11 +350,17 @@ public class FriendshipUserController {
             return ResponseEntity.status(401).body(error);
         }
         
-        // Check role - only ADMIN can decline friend requests
-        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
-        if (!"ADMIN".equals(role)) {
+        // Authorization: only the recipient (user2) can decline
+        Optional<FriendshipUser> friendshipOpt = friendshipUserService.getFriendshipById(id);
+        if (friendshipOpt.isEmpty()) {
             Map<String, String> error = new HashMap<>();
-            error.put("error", "Access denied. Only administrators can decline friend requests.");
+            error.put("error", "Friend request not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        }
+        FriendshipUser friendship = friendshipOpt.get();
+        if (friendship.getUser2() == null || friendship.getUser2().getUserId() != currentUser.getUserId()) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Access denied. Only the recipient can decline this request.");
             return ResponseEntity.status(403).body(error);
         }
         
@@ -370,21 +407,24 @@ public class FriendshipUserController {
             return ResponseEntity.status(401).body(error);
         }
         
-        // Check role - only ADMIN can remove friends
-        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
-        if (!"ADMIN".equals(role)) {
+        // Authorization: only participants (user1 or user2) can remove
+        Optional<FriendshipUser> friendshipOpt = friendshipUserService.getFriendshipById(id);
+        if (friendshipOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        FriendshipUser friendship = friendshipOpt.get();
+        int uid = currentUser.getUserId();
+        if (friendship.getUser1() == null || friendship.getUser2() == null ||
+            (friendship.getUser1().getUserId() != uid && friendship.getUser2().getUserId() != uid)) {
             Map<String, String> error = new HashMap<>();
-            error.put("error", "Access denied. Only administrators can remove friends.");
+            error.put("error", "Access denied. Only friendship participants can remove it.");
             return ResponseEntity.status(403).body(error);
         }
         
-        // Admin can remove friend
-        if (friendshipUserService.getFriendshipById(id).isPresent()) {
-            friendshipUserService.deleteFriendship(id);
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "Friend removed successfully");
-            return ResponseEntity.ok(response);
-        }
-        return ResponseEntity.notFound().build();
+        // Authorized participant can remove friend
+        friendshipUserService.deleteFriendship(id);
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Friend removed successfully");
+        return ResponseEntity.ok(response);
     }
 }

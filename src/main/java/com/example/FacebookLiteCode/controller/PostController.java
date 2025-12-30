@@ -44,8 +44,8 @@ public class PostController {
     }
 
     /**
-     * Create post - Only ADMIN role can create posts
-     * Regular users (USER role) are blocked
+     * Create post - Any authenticated user can create a post for their own account
+     * (userId in request must match the authenticated user)
      */
     @PostMapping
     public ResponseEntity<?> createPost(@Valid @RequestBody PostRequestDTO request) {
@@ -67,16 +67,19 @@ public class PostController {
             error.put("error", "User not found");
             return ResponseEntity.status(401).body(error);
         }
-        
-        // Check role - only ADMIN can create posts
-        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
-        if (!"ADMIN".equals(role)) {
+        // Ownership check - user can only create a post for themselves
+        if (request.getUserId() == null) {
             Map<String, Object> error = new HashMap<>();
-            error.put("error", "Access denied. Only administrators can create posts.");
+            error.put("error", "userId is required and must match authenticated user");
+            return ResponseEntity.status(400).body(error);
+        }
+        if (!request.getUserId().equals(currentUser.getUserId())) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Access denied. You can only create posts for your own account.");
             return ResponseEntity.status(403).body(error);
         }
         
-        // Admin can create post
+        // Authorized user can create post
         PostResponseDTO created = postService.createPost(request);
         return ResponseEntity.ok(created);
     }
@@ -203,11 +206,10 @@ public class PostController {
             return ResponseEntity.status(401).body(error);
         }
         
-        // Check role - only ADMIN can toggle likes
-        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
-        if (!"ADMIN".equals(role)) {
+        // Ownership check - user can only toggle like as themselves
+        if (userId != currentUser.getUserId()) {
             Map<String, Object> error = new HashMap<>();
-            error.put("error", "Access denied. Only administrators can toggle likes.");
+            error.put("error", "Access denied. You can only like/unlike as yourself.");
             return ResponseEntity.status(403).body(error);
         }
         

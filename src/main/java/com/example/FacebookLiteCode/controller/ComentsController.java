@@ -64,15 +64,14 @@ public class ComentsController {
             return ResponseEntity.status(401).body(error);
         }
         
-        // Check role - only ADMIN can create comments
-        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
-        if (!"ADMIN".equals(role)) {
+        // Ownership check - user can only create a comment as themselves
+        if (request.getUserId() == null || !request.getUserId().equals(currentUser.getUserId())) {
             Map<String, Object> error = new HashMap<>();
-            error.put("error", "Access denied. Only administrators can create comments.");
+            error.put("error", "Access denied. You can only create comments as yourself.");
             return ResponseEntity.status(403).body(error);
         }
         
-        // Admin can create comment
+        // Authorized user can create comment
         CommentResponseDTO created = comentsService.createComment(request);
         return ResponseEntity.ok(created);
     }

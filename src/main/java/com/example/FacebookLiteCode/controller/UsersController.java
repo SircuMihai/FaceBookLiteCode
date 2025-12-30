@@ -104,15 +104,24 @@ public class UsersController {
             return ResponseEntity.status(401).body(error);
         }
         
-        // Check role - only ADMIN can update users
+        // Check role - only ADMIN can update arbitrary users
         String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
-        if (!"ADMIN".equals(role)) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "Access denied. Only administrators can update users.");
-            return ResponseEntity.status(403).body(error);
+        boolean isAdmin = "ADMIN".equals(role);
+
+        // Allow self-update for non-admins (but do not allow role change)
+        if (!isAdmin) {
+            if (currentUser.getUserId() != id) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "Access denied. You can only update your own profile.");
+                return ResponseEntity.status(403).body(error);
+            }
+            // Prevent non-admins from changing their role
+            if (request.getRole() != null) {
+                request.setRole(null);
+            }
         }
-        
-        // Admin can update user
+
+        // Proceed with update (admin or self)
         return usersService.updateUser(id, request)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
