@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import jakarta.persistence.*;
+import com.example.FacebookLiteCode.security.EncryptedStringConverter;
 
 @Entity
 @Table(name = "mesages")
@@ -16,7 +17,8 @@ public class Mesages {
     @Column(name = "message_id")
     private int messageId;
     
-    @Column(name = "message", nullable = false)
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(name = "message", nullable = false, columnDefinition = "TEXT")
     private String message;
     
     @Column(name = "data")

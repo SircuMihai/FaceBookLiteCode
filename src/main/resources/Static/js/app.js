@@ -57,9 +57,13 @@ class FacebookLiteApp {
 
         const response = await fetch(url, { ...options, headers });
 
-        if (response.status === 401 || response.status === 403) {
+        if (response.status === 401) {
             this.handleUnauthorized();
             throw new Error('Unauthorized');
+        }
+
+        if (response.status === 403) {
+            throw new Error('Forbidden');
         }
 
         return response;
@@ -182,7 +186,6 @@ class FacebookLiteApp {
             // User is logged in
             let links = `
                 <a href="#" onclick="app.showPage('dashboard-page')">Dashboard</a>
-                <a href="#" onclick="app.showPage('dashboard-page')">Posts</a>
             `;
             
             // Add admin link if user is admin
@@ -1262,25 +1265,7 @@ class FacebookLiteApp {
         
         console.log('Request body being sent:', requestBody);
         console.log('JSON stringified:', JSON.stringify(requestBody));
-        
-        // First test the raw endpoint
-        try {
-            console.log('Testing raw endpoint...');
-            const rawResponse = await this.authFetch(`${this.apiBaseUrl}/messages/raw`, {
-                method: 'POST',
-                body: JSON.stringify(requestBody)
-            });
-            
-            if (rawResponse.ok) {
-                const rawResult = await rawResponse.text();
-                console.log('Raw endpoint response:', rawResult);
-            } else {
-                console.error('Raw endpoint failed:', rawResponse.status);
-            }
-        } catch (rawError) {
-            console.error('Raw endpoint error:', rawError);
-        }
-        
+
         // Now try the actual endpoint
         try {
             const response = await this.authFetch(`${this.apiBaseUrl}/messages`, {

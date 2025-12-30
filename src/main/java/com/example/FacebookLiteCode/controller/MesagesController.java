@@ -79,8 +79,7 @@ public class MesagesController {
     }
     
     /**
-     * Create message - Only ADMIN role can create messages
-     * Regular users (USER role) are blocked
+     * Create message
      */
     @PostMapping
     public ResponseEntity<?> createMessage(@RequestBody MessageRequestDTO request) {
@@ -102,15 +101,10 @@ public class MesagesController {
             error.put("error", "User not found");
             return ResponseEntity.status(401).body(error);
         }
-        
-        // Check role - only ADMIN can create messages
-        String role = currentUser.getRole() != null ? currentUser.getRole() : "USER";
-        if (!"ADMIN".equals(role)) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "Access denied. Only administrators can create messages.");
-            return ResponseEntity.status(403).body(error);
-        }
-        
+ 
+        // Force sender from authenticated user (ignore spoofed senderUserId from client)
+        request.setSenderUserId(currentUser.getUserId());
+         
         System.out.println("DEBUG - Received request: " + request);
         System.out.println("DEBUG - Message: " + request.getMessage());
         System.out.println("DEBUG - Sender ID: " + request.getSenderUserId());
@@ -127,10 +121,10 @@ public class MesagesController {
             return ResponseEntity.badRequest().build();
         }
         
-        // Admin can create message
-        MessageResponseDTO created = mesagesService.createMessage(request);
-        return ResponseEntity.ok(created);
-    }
+        // Create message
+         MessageResponseDTO created = mesagesService.createMessage(request);
+         return ResponseEntity.ok(created);
+     }
     
     /**
      * Update message - Only ADMIN role can update messages
